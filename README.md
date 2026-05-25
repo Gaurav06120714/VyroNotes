@@ -323,21 +323,47 @@ const notes = useMemo(() => allNotes.filter(n => !n.trashed), [allNotes]);
 ### Prerequisites
 - Node.js 20+
 - npm (recommended) or pnpm
+- [Vyro Browser](https://github.com/Gaurav06120714/VyroBrowser) *(optional — auto-opens the app)*
 
-### Installation
+---
+
+### macOS
 
 ```bash
-# Navigate to the project
-cd /Users/gaurav/Desktop/MyProjects/VyroNotes
-
-# Install (use npm — pnpm trips on strict build approvals)
+git clone https://github.com/Gaurav06120714/VyroNotes.git
+cd VyroNotes
 npm install
 
-# Start dev server
+# Start dev server (opens in default browser)
 npm run dev
+
+# Start dev server + auto-open in Vyro Browser
+npm run dev:vyro
 ```
 
-Open **http://localhost:3000** or **http://172.20.10.6:3000** (LAN — works on phones).
+Open **http://localhost:3000** in your browser, or let `dev:vyro` handle it automatically.
+
+---
+
+### Windows
+
+```powershell
+git clone https://github.com/Gaurav06120714/VyroNotes.git
+cd VyroNotes
+npm install
+
+# Start dev server (opens in default browser)
+npm run dev
+
+# Start dev server + auto-open in Vyro Browser
+npm run dev:vyro:win
+```
+
+Open **http://localhost:3000** in your browser, or let `dev:vyro:win` handle it automatically.
+
+---
+
+> 💡 **Vyro Browser** auto-connects if installed at `C:\Users\<you>\AppData\Local\Programs\Vyro\Vyro.exe` (Windows) or `/Applications/Vyro.app` (macOS). Falls back to default browser if not found.
 
 ### If you must use pnpm
 
