@@ -341,7 +341,7 @@ npm run dev
 npm run dev:vyro
 ```
 
-Open **http://localhost:3000** in your browser, or let `dev:vyro` handle it automatically.
+Open **http://localhost:3001** in your browser, or let `dev:vyro` handle it automatically.
 
 ---
 
@@ -359,7 +359,7 @@ npm run dev
 npm run dev:vyro:win
 ```
 
-Open **http://localhost:3000** in your browser, or let `dev:vyro:win` handle it automatically.
+Open **http://localhost:3001** in your browser, or let `dev:vyro:win` handle it automatically.
 
 ---
 

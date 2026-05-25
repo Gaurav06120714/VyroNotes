@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "dev:vyro": "next dev & sleep 3 && node open-in-vyro.mjs http://localhost:3000",
-    "dev:vyro:win": "start /B npm run dev && timeout /t 5 /nobreak && node open-in-vyro.mjs http://localhost:3000",
+    "dev": "next dev -p 3001",
+    "dev:vyro": "next dev -p 3001 & sleep 3 && node open-in-vyro.mjs http://localhost:3001",
+    "dev:vyro:win": "start /B npm run dev && timeout /t 5 /nobreak && node open-in-vyro.mjs http://localhost:3001",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3001",
     "lint": "eslint"
   },
   "dependencies": {
