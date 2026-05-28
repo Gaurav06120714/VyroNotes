@@ -39,13 +39,8 @@ const STATS = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen text-text-primary overflow-x-hidden">
-      {/* Single subtle blob — calmer */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full bg-[rgba(124,109,250,0.10)] blur-[140px] float-anim" />
-      </div>
-
       {/* Nav */}
-      <nav className="sticky top-0 z-30 glass border-b border-app h-16 flex items-center justify-between px-6 md:px-10">
+      <nav className="sticky top-0 z-30 bg-[var(--bg-surface)] border-b border-app h-16 flex items-center justify-between px-6 md:px-10">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-[var(--accent)] flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-white" />
@@ -72,7 +67,7 @@ export default function LandingPage() {
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-app bg-[var(--bg-surface)] text-[11px] text-text-secondary mb-8"
         >
           <Sparkles className="w-3 h-3 text-accent" />
-          <span>AI-powered study companion · v1.0</span>
+          <span>Notes, flashcards, quizzes — all in one place</span>
         </motion.div>
 
         <motion.h1
@@ -81,8 +76,8 @@ export default function LandingPage() {
           transition={{ duration: 0.5, delay: 0.05 }}
           className="text-[44px] md:text-[68px] font-bold tracking-[-0.025em] leading-[1.05] mb-6"
         >
-          Your AI-Powered<br />
-          <span className="gradient-text">Study Sanctuary.</span>
+          One place for<br />
+          <span className="gradient-text">all your studying.</span>
         </motion.h1>
 
         <motion.p
@@ -91,8 +86,7 @@ export default function LandingPage() {
           transition={{ duration: 0.5, delay: 0.15 }}
           className="text-[17px] md:text-[19px] text-text-secondary max-w-2xl mx-auto mb-10 leading-relaxed"
         >
-          One workspace for notes, flashcards, quizzes, assignments and exams.
-          Built for students who care about how they think.
+          Take notes, make flashcards, run quizzes, track assignments, and prep for exams — without switching between five different apps.
         </motion.p>
 
         <motion.div
@@ -116,7 +110,7 @@ export default function LandingPage() {
           transition={{ duration: 0.6, delay: 0.35 }}
           className="relative max-w-4xl mx-auto"
         >
-          <div className="glass-strong rounded-2xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.6)]">
+          <div className="bg-[var(--bg-elevated)] border border-app rounded-2xl overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.4)]">
             <div className="flex items-center gap-2 px-4 h-9 border-b border-app bg-[var(--bg-elevated)]/40">
               <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]/70" />
               <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]/70" />
@@ -156,9 +150,9 @@ export default function LandingPage() {
       {/* Features */}
       <section id="features" className="relative max-w-6xl mx-auto px-6 py-20">
         <div className="text-center mb-14">
-          <div className="text-[11px] uppercase tracking-[0.12em] text-accent mb-3 font-semibold">Everything you need</div>
-          <h2 className="text-[32px] md:text-[44px] font-bold tracking-[-0.02em] mb-3">Built for serious students.</h2>
-          <p className="text-text-secondary max-w-xl mx-auto text-[15px]">From quick capture to exam day — the workflow stays out of your way.</p>
+          <div className="text-[11px] uppercase tracking-[0.12em] text-accent mb-3 font-semibold">What&apos;s included</div>
+          <h2 className="text-[32px] md:text-[44px] font-bold tracking-[-0.02em] mb-3">Everything connected, nothing missing.</h2>
+          <p className="text-text-secondary max-w-xl mx-auto text-[15px]">Jot a note in class. Turn it into a quiz before bed. Track your exam on the calendar. It all connects.</p>
         </div>
         <motion.div
           variants={stagger}
@@ -197,13 +191,9 @@ export default function LandingPage() {
           className="card-v2 relative overflow-hidden"
           style={{ padding: 48, borderRadius: 20 }}
         >
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: "radial-gradient(circle at 50% 0%, var(--accent-soft) 0%, transparent 60%)" }}
-          />
           <div className="relative">
-            <h2 className="text-[32px] md:text-[40px] font-bold tracking-[-0.02em] mb-3">Ready to study smarter?</h2>
-            <p className="text-text-secondary mb-7 text-[15px]">Free to start. No credit card. Your data stays yours.</p>
+            <h2 className="text-[32px] md:text-[40px] font-bold tracking-[-0.02em] mb-3">Give it a try — it&apos;s free.</h2>
+            <p className="text-text-secondary mb-7 text-[15px]">No credit card. No trial period. Your notes and data are yours.</p>
             <Link href="/dashboard" className="btn-primary text-[15px] px-5 py-2.5">
               Get Started Free <ArrowRight className="w-4 h-4" />
             </Link>
