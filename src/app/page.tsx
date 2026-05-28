@@ -12,8 +12,6 @@ import {
   Zap,
   ArrowRight,
 } from "lucide-react";
-import { motion } from "framer-motion";
-import { fadeUp, fadeUpTransition, stagger, staggerItem } from "@/lib/animations";
 
 const FEATURES = [
   { icon: StickyNote, title: "Smart Notes", desc: "Markdown with slash commands, AI summaries, and links between notes." },
@@ -24,13 +22,6 @@ const FEATURES = [
   { icon: Timer, title: "Pomodoro", desc: "Track deep work and build consistency without the noise." },
   { icon: FileText, title: "PDF Chat", desc: "Ask questions about your textbooks and save answers as notes." },
   { icon: Zap, title: "Exam Mode", desc: "A calm, focused cram space with just the topics that matter." },
-];
-
-const STATS = [
-  { label: "Notes", val: "127" },
-  { label: "Streak", val: "23d" },
-  { label: "Mastered", val: "412" },
-  { label: "Focus", val: "4h 12m" },
 ];
 
 export default function LandingPage() {
@@ -57,79 +48,29 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="relative max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-app bg-[var(--bg-surface)] text-[11px] text-text-secondary mb-8"
-        >
-          <Sparkles className="w-3 h-3 text-accent" />
-          <span>Notes, flashcards, quizzes — all in one place</span>
-        </motion.div>
-
-        <motion.h1
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.05 }}
-          className="text-[44px] md:text-[68px] font-bold tracking-[-0.025em] leading-[1.05] mb-6"
-        >
+        <h1 className="text-[44px] md:text-[68px] font-bold tracking-[-0.025em] leading-[1.05] mb-6">
           One place for<br />
           <span className="gradient-text">all your studying.</span>
-        </motion.h1>
+        </h1>
 
-        <motion.p
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.15 }}
-          className="text-[17px] md:text-[19px] text-text-secondary max-w-2xl mx-auto mb-10 leading-relaxed"
-        >
+        <p className="text-[17px] md:text-[19px] text-text-secondary max-w-2xl mx-auto mb-10 leading-relaxed">
           Take notes, make flashcards, run quizzes, track assignments, and prep for exams — without switching between five different apps.
-        </motion.p>
+        </p>
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-20"
-        >
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link href="/dashboard" className="btn-primary text-[15px] px-5 py-2.5">
             Open Dashboard <ArrowRight className="w-4 h-4" />
           </Link>
           <Link href="/login" className="btn-ghost text-[15px] px-5 py-2.5">
             Sign in
           </Link>
-        </motion.div>
-
-        {/* Mock dashboard card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.35 }}
-          className="relative max-w-4xl mx-auto"
-        >
-          <div className="bg-[var(--bg-elevated)] border border-app rounded-2xl overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.4)]">
-            <div className="flex items-center gap-2 px-4 h-9 border-b border-app bg-[var(--bg-elevated)]/40">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]/70" />
-              <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]/70" />
-              <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]/70" />
-              <div className="flex-1 text-center text-[11px] text-text-tertiary">vyronotes.app/dashboard</div>
-            </div>
-            <div className="p-5 grid grid-cols-2 md:grid-cols-4 gap-3">
-              {STATS.map((s) => (
-                <div key={s.label} className="stat-card">
-                  <div className="text-[11px] text-text-tertiary mb-1">{s.label}</div>
-                  <div className="text-[24px] font-semibold text-text-primary">{s.val}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* Dashboard proof section */}
       <section id="stats" className="relative max-w-5xl mx-auto px-6 py-20">
         <div className="card-v2 overflow-hidden" style={{ padding: 0 }}>
-          {/* Fake browser bar */}
+          {/* Browser bar */}
           <div className="flex items-center gap-2 px-4 h-9 border-b border-app bg-[var(--bg-elevated)]">
             <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]/60" />
             <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]/60" />
@@ -197,51 +138,31 @@ export default function LandingPage() {
           <h2 className="text-[32px] md:text-[44px] font-bold tracking-[-0.02em] mb-3">Everything connected, nothing missing.</h2>
           <p className="text-text-secondary max-w-xl mx-auto text-[15px]">Jot a note in class. Turn it into a quiz before bed. Track your exam on the calendar. It all connects.</p>
         </div>
-        <motion.div
-          variants={stagger}
-          initial="initial"
-          whileInView="animate"
-          viewport={{ once: true, margin: "-100px" }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {FEATURES.map((f) => (
-            <motion.div
-              key={f.title}
-              variants={staggerItem}
-              className="card-v2 interactive group cursor-pointer"
-            >
+            <div key={f.title} className="card-v2">
               <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center mb-4 transition-transform group-hover:scale-[1.05]"
+                className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
                 style={{ background: "var(--accent-soft)" }}
               >
                 <f.icon className="w-4.5 h-4.5 text-accent" style={{ width: 18, height: 18 }} />
               </div>
               <div className="font-semibold mb-1 text-[15px]">{f.title}</div>
               <div className="text-[13px] text-text-secondary leading-relaxed">{f.desc}</div>
-            </motion.div>
+            </div>
           ))}
-        </motion.div>
+        </div>
       </section>
 
       {/* CTA */}
       <section id="cta" className="relative max-w-4xl mx-auto px-6 py-24 text-center">
-        <motion.div
-          variants={fadeUp}
-          initial="initial"
-          whileInView="animate"
-          viewport={{ once: true }}
-          transition={fadeUpTransition}
-          className="card-v2 relative overflow-hidden"
-          style={{ padding: 48, borderRadius: 20 }}
-        >
-          <div className="relative">
-            <h2 className="text-[32px] md:text-[40px] font-bold tracking-[-0.02em] mb-3">Give it a try — it&apos;s free.</h2>
-            <p className="text-text-secondary mb-7 text-[15px]">No credit card. No trial period. Your notes and data are yours.</p>
-            <Link href="/dashboard" className="btn-primary text-[15px] px-5 py-2.5">
-              Get Started Free <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </motion.div>
+        <div className="card-v2" style={{ padding: 48, borderRadius: 20 }}>
+          <h2 className="text-[32px] md:text-[40px] font-bold tracking-[-0.02em] mb-3">Give it a try — it&apos;s free.</h2>
+          <p className="text-text-secondary mb-7 text-[15px]">No credit card. No trial period. Your notes and data are yours.</p>
+          <Link href="/dashboard" className="btn-primary text-[15px] px-5 py-2.5">
+            Get Started Free <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
       </section>
 
       {/* Footer */}
