@@ -11,9 +11,6 @@ import {
   FileText,
   Zap,
   ArrowRight,
-  Brain,
-  Target,
-  Flame,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { fadeUp, fadeUpTransition, stagger, staggerItem } from "@/lib/animations";
@@ -129,21 +126,67 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* Stats bar */}
+      {/* Dashboard proof section */}
       <section id="stats" className="relative max-w-5xl mx-auto px-6 py-12">
-        <div className="card-v2 grid grid-cols-2 md:grid-cols-4 gap-6 text-center" style={{ padding: 32 }}>
-          {[
-            { Icon: Brain, val: "10x", label: "faster recall" },
-            { Icon: Target, val: "90%", label: "avg quiz score" },
-            { Icon: Flame, val: "23d", label: "avg streak" },
-            { Icon: Sparkles, val: "4h+", label: "daily focus" },
-          ].map(({ Icon, val, label }) => (
-            <div key={label}>
-              <Icon className="w-5 h-5 mx-auto mb-2.5 text-accent" />
-              <div className="text-[24px] font-semibold mb-0.5">{val}</div>
-              <div className="text-[11px] text-text-tertiary">{label}</div>
+        <div className="card-v2 overflow-hidden" style={{ padding: 0 }}>
+          {/* Fake browser bar */}
+          <div className="flex items-center gap-2 px-4 h-9 border-b border-app bg-[var(--bg-elevated)]">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]/60" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]/60" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]/60" />
+            <span className="flex-1 text-center text-[11px] text-text-tertiary">vyronotes.app/dashboard</span>
+          </div>
+          {/* Dashboard content */}
+          <div className="p-5">
+            {/* Top row: stat cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              {[
+                { label: 'Notes', value: '127', delta: '+3 today' },
+                { label: 'Cards mastered', value: '412', delta: '18 due today' },
+                { label: 'Streak', value: '23 days', delta: 'best: 31' },
+                { label: 'Focus today', value: '2h 14m', delta: 'goal: 3h' },
+              ].map(({ label, value, delta }) => (
+                <div key={label} className="stat-card">
+                  <div className="text-[11px] text-text-tertiary mb-1">{label}</div>
+                  <div className="text-[20px] font-semibold text-text-primary leading-tight">{value}</div>
+                  <div className="text-[11px] text-text-tertiary mt-0.5">{delta}</div>
+                </div>
+              ))}
             </div>
-          ))}
+            {/* Bottom row: recent note + upcoming */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Recent note */}
+              <div className="stat-card">
+                <div className="text-[11px] text-text-tertiary mb-2">Last edited note</div>
+                <div className="text-[13px] font-semibold text-text-primary mb-1">Chapter 9 — Cellular Respiration</div>
+                <div className="text-[12px] text-text-secondary leading-relaxed line-clamp-2">
+                  Glycolysis converts glucose → 2 pyruvate, net +2 ATP. Occurs in cytoplasm, no O₂ needed. Krebs cycle runs ×2 per glucose...
+                </div>
+                <div className="flex gap-1.5 mt-2.5">
+                  {['Biology', 'Exam prep'].map(t => (
+                    <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-accent">{t}</span>
+                  ))}
+                </div>
+              </div>
+              {/* Upcoming */}
+              <div className="stat-card">
+                <div className="text-[11px] text-text-tertiary mb-2">Coming up</div>
+                <div className="space-y-2">
+                  {[
+                    { title: 'Bio midterm', date: 'Fri 30 May', type: 'Exam', urgent: true },
+                    { title: 'Chem lab report', date: 'Mon 2 Jun', type: 'Assignment', urgent: false },
+                    { title: 'Stats quiz 4', date: 'Wed 4 Jun', type: 'Quiz', urgent: false },
+                  ].map(({ title, date, type, urgent }) => (
+                    <div key={title} className="flex items-center gap-2">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${urgent ? 'bg-[rgba(245,158,11,0.12)] text-[var(--warning)]' : 'bg-[var(--bg-elevated)] text-text-tertiary'}`}>{type}</span>
+                      <span className="text-[12px] text-text-primary flex-1 truncate">{title}</span>
+                      <span className="text-[11px] text-text-tertiary shrink-0">{date}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
