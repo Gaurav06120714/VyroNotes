@@ -88,6 +88,8 @@ html, body {
   background: var(--bg-base);
   color: var(--text-primary);
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: "cv11", "ss01", "ss03";
@@ -98,9 +100,7 @@ html {
 }
 
 body {
-  /* Subtle grain texture — much calmer than mesh */
-  background-image:
-    radial-gradient(circle at 50% 0%, rgba(124, 109, 250, 0.04) 0%, transparent 35%);
+  background-image: none;
 }
 
 ::selection {
@@ -124,27 +124,22 @@ body {
   background: var(--text-tertiary);
 }
 
-/* Glass utilities — refined */
+/* Flat surface utilities */
 .glass {
-  background: var(--bg-glass);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  background: var(--bg-surface);
   border: 1px solid var(--border);
 }
 .glass-strong {
-  background: rgba(12, 12, 17, 0.88);
-  backdrop-filter: blur(24px) saturate(140%);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  background: var(--bg-elevated);
   border: 1px solid var(--border-strong);
 }
 [data-theme="light"] .glass-strong {
-  background: rgba(255, 255, 255, 0.88);
+  background: #ffffff;
 }
 
-/* Single, very subtle background tint */
+/* Flat background tint — removed gradient */
 .subtle-bg {
-  background-image:
-    radial-gradient(circle at 0% 0%, rgba(124, 109, 250, 0.04) 0px, transparent 40%);
+  background-image: none;
 }
 
 /* Grain texture — production polish */
@@ -190,23 +185,18 @@ body {
   border-color: var(--border-strong);
 }
 
-/* Restrained gradient text — just two colors */
+/* Accent text — flat */
 .gradient-text {
-  background: linear-gradient(135deg, var(--accent) 0%, #5b8df6 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+  color: var(--accent);
 }
 
 .gradient-accent {
   background: var(--accent);
 }
 
-/* Subtle mesh — single soft blob for hero only */
+/* Flat hero background */
 .mesh-bg {
-  background-image:
-    radial-gradient(at 50% 0%, rgba(124, 109, 250, 0.06) 0px, transparent 50%);
+  background-image: none;
 }
 
 /* Subtle divider */

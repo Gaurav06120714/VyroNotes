@@ -127,7 +127,7 @@ export default function LandingPage() {
       </section>
 
       {/* Dashboard proof section */}
-      <section id="stats" className="relative max-w-5xl mx-auto px-6 py-12">
+      <section id="stats" className="relative max-w-5xl mx-auto px-6 py-20">
         <div className="card-v2 overflow-hidden" style={{ padding: 0 }}>
           {/* Fake browser bar */}
           <div className="flex items-center gap-2 px-4 h-9 border-b border-app bg-[var(--bg-elevated)]">
