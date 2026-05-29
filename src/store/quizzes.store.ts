@@ -7,6 +7,7 @@ import { DUMMY_QUIZZES } from "@/lib/dummy-data";
 interface QuizzesState {
   quizzes: Quiz[];
   recordAttempt: (id: string, score: number) => void;
+  addQuiz: (quiz: Quiz) => void;
 }
 
 export const useQuizzesStore = create<QuizzesState>()(
@@ -25,6 +26,7 @@ export const useQuizzesStore = create<QuizzesState>()(
               : q
           ),
         })),
+      addQuiz: (quiz) => set((s) => ({ quizzes: [quiz, ...s.quizzes] })),
     }),
     { name: "vyronotes-quizzes" }
   )

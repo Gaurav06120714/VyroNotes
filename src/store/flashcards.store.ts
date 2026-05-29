@@ -18,6 +18,7 @@ interface FlashcardsState {
   reviewLog: ReviewLog[];
   createDeck: (name: string, subject: FlashcardDeck["subject"]) => void;
   deleteDeck: (id: string) => void;
+  addCardsToDeck: (deckId: string, cards: Array<{ front: string; back: string }>) => void;
   rateCard: (deckId: string, cardId: string, rating: Rating) => void;
   updateCardMastery: (deckId: string, cardId: string, knew: boolean) => void;
   getDueCards: (deckId: string) => number;
@@ -45,6 +46,26 @@ export const useFlashcardsStore = create<FlashcardsState>()(
           ],
         })),
       deleteDeck: (id) => set((s) => ({ decks: s.decks.filter((d) => d.id !== id) })),
+      addCardsToDeck: (deckId, cards) =>
+        set((s) => ({
+          decks: s.decks.map((d) => {
+            if (d.id !== deckId) return d;
+            const newCards = cards.map((c) => ({
+              id: uid(),
+              front: c.front,
+              back: c.back,
+              mastery: 0,
+              dueAt: new Date().toISOString(),
+              easeFactor: 2.5,
+              interval: 0,
+            }));
+            return {
+              ...d,
+              cards: [...d.cards, ...newCards],
+              description: `${d.cards.length + newCards.length} cards • ${d.subject}`,
+            };
+          }),
+        })),
       rateCard: (deckId, cardId, rating) =>
         set((s) => ({
           decks: s.decks.map((d) =>

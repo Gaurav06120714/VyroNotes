@@ -39,6 +39,7 @@ import { Subject } from "@/lib/types";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import { useFlashcardsStore } from "@/store/flashcards.store";
+import { useQuizzesStore } from "@/store/quizzes.store";
 import { SlashMenu } from "@/components/notes/SlashMenu";
 import { SelectionToolbar } from "@/components/notes/SelectionToolbar";
 import { BacklinksPanel } from "@/components/notes/BacklinksPanel";
@@ -59,7 +60,9 @@ export default function NoteEditorPage() {
   const router = useRouter();
   const id = params.id as string;
   const { notes, folders, updateNote, togglePin, toggleArchive, deleteNote, tags: allTags } = useNotesStore();
-  const { createDeck } = useFlashcardsStore();
+  const { createDeck, addCardsToDeck } = useFlashcardsStore();
+  const { addQuiz } = useQuizzesStore();
+  const [aiLoading, setAiLoading] = useState<string | null>(null);
 
   const note = notes.find((n) => n.id === id);
 
@@ -233,8 +236,31 @@ export default function NoteEditorPage() {
     const after = content.slice(caret);
     let insertText = action.insert;
     if (action.id === "ai") {
-      insertText = "\n\n> AI continuation: Building on your last point, the next concept to explore is the relationship between rate of change and accumulation.\n\n";
-      toast.success("AI continuation inserted");
+      // Kick off async AI continuation after inserting a placeholder
+      insertText = "\n\n> AI: generating…\n\n";
+      toast.loading("Generating AI continuation…", { id: "ai-cont" });
+      const beforeText = content.slice(0, slashStart);
+      const contextText = beforeText.slice(-800); // last 800 chars for context
+      fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: "You are a smart note-taking assistant. Continue the note from where it left off. Be concise and use markdown.",
+          prompt: contextText,
+        }),
+      })
+        .then((r) => r.json())
+        .then((data: { text?: string }) => {
+          if (data.text) {
+            setContent((prev) =>
+              prev.replace("> AI: generating…", "> AI: " + data.text!.replace(/\n/g, "\n> "))
+            );
+            toast.success("AI continuation inserted", { id: "ai-cont" });
+          }
+        })
+        .catch(() => {
+          toast.error("AI continuation failed", { id: "ai-cont" });
+        });
     }
     const next = before + insertText + after;
     setContent(next);
@@ -274,15 +300,50 @@ export default function NoteEditorPage() {
     return () => document.removeEventListener("selectionchange", handler);
   }, [checkSelection]);
 
-  const handleAIAction = (action: "summarize" | "explain" | "make-question" | "translate") => {
-    const map = {
-      summarize: "Summary: this passage discusses the core concept and its implications. Key points captured below.",
-      explain: "Plain explanation: think of it as the connection between input changes and output responses. The technical version is exact, but the intuition is just 'sensitivity.'",
-      "make-question": "Quiz question: explain the relationship described in this passage with a worked example.",
-      translate: "Translation preview: technical terms preserved; rest paraphrased clearly.",
-    };
-    toast.success(map[action]);
+  const handleAIAction = async (action: "summarize" | "explain" | "make-question" | "translate") => {
+    const selectedText = selectionToolbar.text;
     setSelectionToolbar((s) => ({ ...s, visible: false }));
+
+    const systemPrompts = {
+      summarize: "You are a concise academic study assistant. Summarize the following passage into clear bullet points. Use markdown.",
+      explain: "You are a tutor. Explain this passage clearly in simple terms, then give a real-world example.",
+      "make-question": "Generate 3 quiz questions from this passage. Use markdown numbered list.",
+      translate: "Paraphrase this passage in simpler academic English, preserving technical terms. Use markdown.",
+    };
+
+    const toastMsg = {
+      summarize: "Summarizing selection…",
+      explain: "Generating explanation…",
+      "make-question": "Generating questions…",
+      translate: "Paraphrasing…",
+    };
+
+    const toId = toast.loading(toastMsg[action]);
+    try {
+      const res = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: selectedText, system: systemPrompts[action] }),
+      });
+      const data = await res.json() as { text?: string; error?: string };
+      toast.dismiss(toId);
+      if (!res.ok || !data.text) {
+        toast.error(data.error ?? "AI request failed");
+        return;
+      }
+      // Insert result as a blockquote after current cursor / selection
+      const ta = editorRef.current;
+      if (ta) {
+        const insertAt = ta.selectionEnd;
+        const before = content.slice(0, insertAt);
+        const after  = content.slice(insertAt);
+        setContent(before + "\n\n> **AI:** " + data.text.replace(/\n/g, "\n> ") + "\n\n" + after);
+        toast.success("AI response inserted");
+      }
+    } catch {
+      toast.dismiss(toId);
+      toast.error("Failed to reach AI service");
+    }
   };
 
   const handleWikiPick = (title: string) => {
@@ -329,31 +390,139 @@ export default function NoteEditorPage() {
     }
   };
 
+  const callGenerate = async (
+    system: string,
+    prompt: string,
+    label: string
+  ): Promise<string | null> => {
+    setAiLoading(label);
+    try {
+      const res = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, system }),
+      });
+      const data = await res.json() as { text?: string; error?: string };
+      if (!res.ok || !data.text) {
+        toast.error(data.error ?? "AI request failed");
+        return null;
+      }
+      return data.text;
+    } catch {
+      toast.error("Failed to reach AI service");
+      return null;
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
   const aiActions = [
     {
       label: "Summarize",
-      run: () => {
-        toast.success("AI summary added at top");
-        setContent("## AI Summary\n- Key idea: ...\n- Important formula: ...\n- Watch out for: ...\n\n---\n\n" + content);
+      run: async () => {
+        const text = await callGenerate(
+          "You are a concise academic study assistant. Summarize the following note content into clear bullet points. Use markdown formatting.",
+          content || title,
+          "Summarize"
+        );
+        if (text) {
+          setContent("## AI Summary\n\n" + text + "\n\n---\n\n" + content);
+          toast.success("AI summary added at top");
+        }
       },
     },
     {
       label: "Generate Quiz",
-      run: () => {
-        toast.success("Quiz generated — check the Quizzes page");
-        router.push("/quizzes");
+      run: async () => {
+        const text = await callGenerate(
+          'Generate 5 multiple-choice quiz questions from this content. Return ONLY a JSON array: [{"question":"...","options":["A","B","C","D"],"correctIndex":0,"explanation":"..."}]',
+          content || title,
+          "Generate Quiz"
+        );
+        if (!text) return;
+        try {
+          // Strip markdown code fences if present
+          const cleaned = text.replace(/```(?:json)?\n?/g, "").replace(/```/g, "").trim();
+          const start = cleaned.indexOf("[");
+          const end   = cleaned.lastIndexOf("]");
+          if (start === -1 || end === -1) throw new Error("No JSON array found");
+          const questions = JSON.parse(cleaned.slice(start, end + 1)) as Array<{
+            question: string;
+            options: string[];
+            correctIndex: number;
+            explanation?: string;
+          }>;
+          const { uid: uidFn } = await import("@/lib/utils");
+          const quiz = {
+            id: uidFn(),
+            title: `${title} — AI Quiz`,
+            subject,
+            description: `Auto-generated from "${title}"`,
+            questions: questions.map((q) => ({
+              id: uidFn(),
+              question: q.question,
+              options: q.options,
+              correctIndex: q.correctIndex,
+              explanation: q.explanation,
+            })),
+            attempts: 0,
+            timePerQuestion: 60,
+            createdAt: new Date().toISOString(),
+          };
+          addQuiz(quiz);
+          toast.success("Quiz generated — check the Quizzes page");
+          router.push("/quizzes");
+        } catch {
+          toast.error("Could not parse quiz response — try again");
+        }
       },
     },
     {
       label: "Make Flashcards",
-      run: () => {
-        createDeck(`${title} — Auto Deck`, subject);
-        toast.success("Flashcard deck created");
+      run: async () => {
+        const text = await callGenerate(
+          'You are a study card generator. Given the following note, generate 8-12 flashcards as a JSON array: [{"front": "question", "back": "answer"}]. Return ONLY valid JSON, no other text.',
+          content || title,
+          "Make Flashcards"
+        );
+        if (!text) return;
+        try {
+          const cleaned = text.replace(/```(?:json)?\n?/g, "").replace(/```/g, "").trim();
+          const start = cleaned.indexOf("[");
+          const end   = cleaned.lastIndexOf("]");
+          if (start === -1 || end === -1) throw new Error("No JSON array found");
+          const cards = JSON.parse(cleaned.slice(start, end + 1)) as Array<{ front: string; back: string }>;
+          // Create deck then populate
+          const { uid: uidFn } = await import("@/lib/utils");
+          const deckId = uidFn();
+          // Use createDeck to add empty deck, then addCardsToDeck
+          createDeck(`${title} — AI Deck`, subject);
+          // We need the deckId — createDeck doesn't return it, so grab the latest
+          const storeDecks = (await import("@/store/flashcards.store")).useFlashcardsStore.getState().decks;
+          const newDeck = storeDecks[storeDecks.length - 1];
+          if (newDeck) {
+            addCardsToDeck(newDeck.id, cards);
+          }
+          void deckId;
+          toast.success(`${cards.length} flashcards created`);
+        } catch {
+          toast.error("Could not parse flashcard response — try again");
+        }
       },
     },
     {
       label: "Key Concepts",
-      run: () => toast.success("Key concepts tagged in your note"),
+      run: async () => {
+        const text = await callGenerate(
+          "Extract the 5-8 most important concepts from this note as a markdown bullet list with one-line explanations.",
+          content || title,
+          "Key Concepts"
+        );
+        if (text) {
+          setContent(content + "\n\n## Key Concepts\n\n" + text);
+          toast.success("Key concepts appended");
+        }
+      },
     },
   ];
 
@@ -585,10 +754,12 @@ export default function NoteEditorPage() {
                 {aiActions.map((a) => (
                   <button
                     key={a.label}
-                    onClick={a.run}
-                    className="px-3 py-2 text-[12px] rounded-md transition-colors"
+                    onClick={() => { void a.run(); }}
+                    disabled={aiLoading !== null}
+                    className="px-3 py-2 text-[12px] rounded-md transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
                     style={{ background: "var(--accent-soft)" }}
                   >
+                    {aiLoading === a.label && <Loader2 className="w-3 h-3 animate-spin" />}
                     {a.label}
                   </button>
                 ))}

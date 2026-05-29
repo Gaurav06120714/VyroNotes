@@ -2,15 +2,15 @@
 import { useUIStore } from "@/store/ui.store";
 import { useChatStore } from "@/store/chat.store";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sparkles, X, Send, Maximize2 } from "lucide-react";
+import { Sparkles, X, Send, Maximize2, Square, Loader2 } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
-import { QUICK_PROMPTS, getContextualPrompts } from "@/lib/ai-mock";
+import { getContextualPrompts, QUICK_PROMPTS } from "@/lib/ai-mock";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export function FloatingAssistant() {
   const { aiOpen, setAIOpen } = useUIStore();
-  const { messages, send } = useChatStore();
+  const { messages, send, streaming, _abortController } = useChatStore();
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
@@ -20,9 +20,13 @@ export function FloatingAssistant() {
   }, [messages, aiOpen]);
 
   const handleSend = () => {
-    if (!input.trim()) return;
+    if (!input.trim() || streaming) return;
     send(input.trim(), pathname);
     setInput("");
+  };
+
+  const handleAbort = () => {
+    _abortController?.abort();
   };
 
   const contextualPrompts = useMemo(() => getContextualPrompts(pathname), [pathname]);
@@ -30,7 +34,7 @@ export function FloatingAssistant() {
 
   return (
     <>
-      {/* Floating bubble — repositions above bottom nav on mobile */}
+      {/* Floating bubble */}
       <AnimatePresence>
         {!aiOpen && (
           <motion.button
@@ -59,6 +63,7 @@ export function FloatingAssistant() {
             role="dialog"
             aria-label="AI Study Buddy chat"
           >
+            {/* Header */}
             <div className="flex items-center gap-2 px-4 h-14 border-b border-app shrink-0">
               <div className="w-8 h-8 rounded-md bg-[var(--accent)] flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
@@ -66,8 +71,17 @@ export function FloatingAssistant() {
               <div className="flex-1">
                 <div className="text-[13px] font-semibold leading-tight">AI Study Buddy</div>
                 <div className="text-[10px] text-text-tertiary flex items-center gap-1 leading-tight mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" />
-                  <span>Online · contextual to {pathname.split("/").pop() || "app"}</span>
+                  {streaming ? (
+                    <>
+                      <Loader2 className="w-1.5 h-1.5 animate-spin" />
+                      <span>Thinking…</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" />
+                      <span>Online · contextual to {pathname.split("/").pop() || "app"}</span>
+                    </>
+                  )}
                 </div>
               </div>
               <Link
@@ -88,26 +102,42 @@ export function FloatingAssistant() {
               </button>
             </div>
 
+            {/* Messages */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-                >
+              {messages.map((m, idx) => {
+                const isLastAssistant =
+                  m.role === "assistant" && idx === messages.length - 1 && streaming;
+                return (
                   <div
-                    className={`max-w-[85%] px-3 py-2 rounded-xl text-[13px] whitespace-pre-wrap leading-relaxed ${
-                      m.role === "user"
-                        ? "bg-[var(--accent)] text-white rounded-br-sm"
-                        : "bg-bg-elevated text-text-primary rounded-bl-sm border border-app"
-                    }`}
+                    key={m.id}
+                    className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    {m.content}
+                    <div
+                      className={`max-w-[85%] px-3 py-2 rounded-xl text-[13px] whitespace-pre-wrap leading-relaxed ${
+                        m.role === "user"
+                          ? "bg-[var(--accent)] text-white rounded-br-sm"
+                          : "bg-bg-elevated text-text-primary rounded-bl-sm border border-app"
+                      }`}
+                    >
+                      {m.content}
+                      {isLastAssistant && m.content === "" && (
+                        <span className="inline-flex gap-0.5 items-center ml-1">
+                          <span className="w-1 h-1 bg-current rounded-full animate-bounce [animation-delay:0ms]" />
+                          <span className="w-1 h-1 bg-current rounded-full animate-bounce [animation-delay:150ms]" />
+                          <span className="w-1 h-1 bg-current rounded-full animate-bounce [animation-delay:300ms]" />
+                        </span>
+                      )}
+                      {isLastAssistant && m.content !== "" && (
+                        <span className="inline-block w-0.5 h-3 bg-current opacity-70 animate-pulse ml-0.5 align-middle" />
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            {showSuggestions && (
+            {/* Quick prompts */}
+            {showSuggestions && !streaming && (
               <div className="px-4 pb-2 flex flex-wrap gap-1.5">
                 {(contextualPrompts.length ? contextualPrompts : QUICK_PROMPTS).slice(0, 3).map((p) => (
                   <button
@@ -121,24 +151,37 @@ export function FloatingAssistant() {
               </div>
             )}
 
+            {/* Input bar */}
             <div className="p-3 border-t border-app shrink-0">
               <div className="flex items-center gap-2">
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                  placeholder="Ask anything…"
-                  className="input-base"
+                  placeholder={streaming ? "Waiting for response…" : "Ask anything…"}
+                  disabled={streaming}
+                  className="input-base disabled:opacity-50"
                   aria-label="Message"
                 />
-                <button
-                  onClick={handleSend}
-                  disabled={!input.trim()}
-                  className="w-9 h-9 rounded-md bg-[var(--accent)] flex items-center justify-center disabled:opacity-40 shrink-0 hover:bg-[var(--accent-hover)] transition-colors"
-                  aria-label="Send"
-                >
-                  <Send className="w-4 h-4 text-white" />
-                </button>
+                {streaming ? (
+                  <button
+                    onClick={handleAbort}
+                    className="w-9 h-9 rounded-md bg-[var(--danger)] flex items-center justify-center shrink-0 hover:opacity-80 transition-opacity"
+                    aria-label="Stop generation"
+                    title="Stop"
+                  >
+                    <Square className="w-4 h-4 text-white" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSend}
+                    disabled={!input.trim()}
+                    className="w-9 h-9 rounded-md bg-[var(--accent)] flex items-center justify-center disabled:opacity-40 shrink-0 hover:bg-[var(--accent-hover)] transition-colors"
+                    aria-label="Send"
+                  >
+                    <Send className="w-4 h-4 text-white" />
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>
