@@ -31,6 +31,7 @@ import {
   FileText,
   BookOpen,
   Minimize2,
+  SlidersHorizontal,
 } from "lucide-react";
 import { wordCount, readingTime, formatRelative, cn } from "@/lib/utils";
 import { SUBJECTS } from "@/lib/dummy-data";
@@ -41,6 +42,8 @@ import { useFlashcardsStore } from "@/store/flashcards.store";
 import { SlashMenu } from "@/components/notes/SlashMenu";
 import { SelectionToolbar } from "@/components/notes/SelectionToolbar";
 import { BacklinksPanel } from "@/components/notes/BacklinksPanel";
+import { WikiLinkPopover } from "@/components/notes/WikiLinkPopover";
+import { PropertiesPanel } from "@/components/notes/PropertiesPanel";
 import { AnimatePresence, motion } from "framer-motion";
 import { useKeyboardShortcut } from "@/hooks/useKeyboardShortcut";
 
@@ -55,7 +58,7 @@ export default function NoteEditorPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const { notes, updateNote, togglePin, toggleArchive, deleteNote, tags: allTags } = useNotesStore();
+  const { notes, folders, updateNote, togglePin, toggleArchive, deleteNote, tags: allTags } = useNotesStore();
   const { createDeck } = useFlashcardsStore();
 
   const note = notes.find((n) => n.id === id);
@@ -68,6 +71,7 @@ export default function NoteEditorPage() {
   const [focusMode, setFocusMode] = useState(false);
   const [readingMode, setReadingMode] = useState(false);
   const [showAI, setShowAI] = useState(false);
+  const [showProps, setShowProps] = useState(false);
   const [newTag, setNewTag] = useState("");
 
   // Slash menu state
@@ -75,6 +79,12 @@ export default function NoteEditorPage() {
   const [slashQuery, setSlashQuery] = useState("");
   const [slashPosition, setSlashPosition] = useState({ top: 0, left: 0 });
   const [slashStart, setSlashStart] = useState(-1);
+
+  // WikiLink popover state
+  const [wikiOpen, setWikiOpen] = useState(false);
+  const [wikiQuery, setWikiQuery] = useState("");
+  const [wikiPosition, setWikiPosition] = useState({ top: 0, left: 0 });
+  const [wikiStart, setWikiStart] = useState(-1);
 
   // Selection toolbar state
   const [selectionToolbar, setSelectionToolbar] = useState<{ visible: boolean; top: number; left: number; text: string }>({
@@ -141,35 +151,72 @@ export default function NoteEditorPage() {
     }, 0);
   };
 
-  // Slash command handling
+  /** Shared line-height-based caret position estimator (avoids heavy DOM mirror). */
+  const estimateCaretPos = (
+    ta: HTMLTextAreaElement,
+    markerIdx: number,
+    newContent: string
+  ): { top: number; left: number } => {
+    const linesBeforeCaret = newContent.slice(0, markerIdx).split("\n").length;
+    const lineHeight = 24;
+    const top = linesBeforeCaret * lineHeight + 36 - ta.scrollTop;
+    return { top, left: 16 };
+  };
+
+  // Slash command handling + WikiLink detection
   const onContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
     setContent(newContent);
     const ta = e.target;
     const caret = ta.selectionStart;
-    const lineStart = newContent.lastIndexOf("\n", caret - 1) + 1;
-    const slashIdx = newContent.lastIndexOf("/", caret - 1);
 
-    // Slash must be at start of line (only whitespace before)
+    // ── WikiLink `[[` detection ──────────────────────────────────────────────
+    // Find the last `[[` that is still open (no matching `]]` after it).
+    const doubleBracketIdx = newContent.lastIndexOf("[[", caret - 1);
+    const closingIdx       = newContent.indexOf("]]", doubleBracketIdx);
+    const wikiActive =
+      doubleBracketIdx !== -1 &&
+      doubleBracketIdx < caret &&
+      (closingIdx === -1 || closingIdx >= caret);
+
+    if (wikiActive) {
+      const query = newContent.slice(doubleBracketIdx + 2, caret);
+      // Close if user inserted a newline or a closing bracket inside the query
+      if (query.includes("\n") || query.includes("]]")) {
+        setWikiOpen(false);
+      } else {
+        setWikiStart(doubleBracketIdx);
+        setWikiQuery(query);
+        const wrapRect = editorWrapRef.current?.getBoundingClientRect();
+        if (wrapRect) {
+          const { top, left } = estimateCaretPos(ta, doubleBracketIdx, newContent);
+          setWikiPosition({ top: Math.min(top, wrapRect.height - 280), left });
+        }
+        setWikiOpen(true);
+        // WikiLink takes priority — close slash menu
+        setSlashOpen(false);
+        return;
+      }
+    } else {
+      setWikiOpen(false);
+    }
+
+    // ── Slash command detection ──────────────────────────────────────────────
+    const lineStart = newContent.lastIndexOf("\n", caret - 1) + 1;
+    const slashIdx  = newContent.lastIndexOf("/", caret - 1);
+
     if (slashIdx >= lineStart && newContent.slice(lineStart, slashIdx).trim() === "") {
       const query = newContent.slice(slashIdx + 1, caret);
-      // Cancel if user typed space
       if (/\s/.test(query)) {
         setSlashOpen(false);
         return;
       }
       setSlashStart(slashIdx);
       setSlashQuery(query);
-      // Compute position
       const rect = ta.getBoundingClientRect();
       const wrapRect = editorWrapRef.current?.getBoundingClientRect();
       if (wrapRect) {
-        // Estimate via measured caret coords using a hidden div mirror would be heavy.
-        // Use line-based estimate: count newlines up to caret.
-        const linesBeforeCaret = newContent.slice(0, slashIdx).split("\n").length;
-        const lineHeight = 24; // rough
-        const top = (linesBeforeCaret * lineHeight) + 36 - ta.scrollTop;
-        const left = 16; // gutter
+        const { top, left } = estimateCaretPos(ta, slashIdx, newContent);
         setSlashPosition({ top: Math.min(top, rect.height - 280), left });
       }
       setSlashOpen(true);
@@ -238,7 +285,31 @@ export default function NoteEditorPage() {
     setSelectionToolbar((s) => ({ ...s, visible: false }));
   };
 
+  const handleWikiPick = (title: string) => {
+    const ta = editorRef.current;
+    if (!ta || wikiStart < 0) return;
+    const caret = ta.selectionStart;
+    const before = content.slice(0, wikiStart);       // everything before `[[`
+    const after  = content.slice(caret);               // everything after cursor
+    const inserted = `[[${title}]]`;
+    const next = before + inserted + after;
+    setContent(next);
+    setWikiOpen(false);
+    setTimeout(() => {
+      ta.focus();
+      const pos = before.length + inserted.length;
+      ta.setSelectionRange(pos, pos);
+    }, 0);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // WikiLink popover consumes nav keys via window capture listener
+    if (wikiOpen) {
+      if (["ArrowDown", "ArrowUp", "Enter", "Escape"].includes(e.key)) {
+        if (e.key === "Enter") e.preventDefault();
+        return;
+      }
+    }
     if (slashOpen) {
       // Slash menu handles its own keys via window listener
       if (["ArrowDown", "ArrowUp", "Enter", "Escape"].includes(e.key)) {
@@ -348,6 +419,17 @@ export default function NoteEditorPage() {
               style={showAI ? { background: "var(--accent-soft)" } : undefined}
             >
               <Sparkles className="w-3.5 h-3.5" /> AI
+            </button>
+            <button
+              onClick={() => setShowProps(!showProps)}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 h-8 rounded-md text-[12px] transition-colors",
+                showProps ? "text-text-primary" : "hover:bg-bg-elevated text-text-secondary"
+              )}
+              style={showProps ? { background: "var(--accent-soft)" } : undefined}
+              title="Properties"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" /> Props
             </button>
             {!readingMode && (
               <button onClick={() => setPreview(!preview)} className="flex items-center gap-1.5 px-2.5 h-8 rounded-md text-[12px] hover:bg-bg-elevated text-text-secondary">
@@ -514,8 +596,21 @@ export default function NoteEditorPage() {
             </div>
           )}
 
-          {/* Editor grid: editor + (preview || backlinks) */}
-          <div className={cn("grid gap-4", focusMode ? "grid-cols-1" : (preview ? "grid-cols-1 lg:grid-cols-[1fr_1fr_240px]" : "grid-cols-1 lg:grid-cols-[1fr_240px]"))}>
+          {/* Editor grid: editor + (preview) + backlinks + (properties) */}
+          <div
+            className={cn(
+              "grid gap-4",
+              focusMode
+                ? "grid-cols-1"
+                : preview
+                ? showProps
+                  ? "grid-cols-1 lg:grid-cols-[1fr_1fr_240px_240px]"
+                  : "grid-cols-1 lg:grid-cols-[1fr_1fr_240px]"
+                : showProps
+                ? "grid-cols-1 lg:grid-cols-[1fr_240px_240px]"
+                : "grid-cols-1 lg:grid-cols-[1fr_240px]"
+            )}
+          >
             <div ref={editorWrapRef} className="relative">
               <textarea
                 id="md-editor"
@@ -533,6 +628,13 @@ export default function NoteEditorPage() {
                 onPick={handleSlashPick}
                 onClose={() => setSlashOpen(false)}
               />
+              <WikiLinkPopover
+                open={wikiOpen}
+                query={wikiQuery}
+                position={wikiPosition}
+                onPick={handleWikiPick}
+                onClose={() => setWikiOpen(false)}
+              />
             </div>
             {preview && !focusMode && (
               <div className="card-v2 min-h-[60vh] overflow-auto">
@@ -542,6 +644,19 @@ export default function NoteEditorPage() {
               </div>
             )}
             {!focusMode && <BacklinksPanel currentNoteId={note.id} currentTitle={note.title} />}
+            <AnimatePresence>
+              {showProps && !focusMode && (
+                <PropertiesPanel
+                  note={note}
+                  content={content}
+                  tags={tags}
+                  setTags={setTags}
+                  allTags={allTags}
+                  folders={folders}
+                  updateNote={updateNote}
+                />
+              )}
+            </AnimatePresence>
           </div>
         </>
       )}

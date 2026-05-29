@@ -23,6 +23,9 @@ const groups = [
       { keys: ["G", "Q"], label: "Go to Quizzes" },
       { keys: ["G", "A"], label: "Go to Assignments" },
       { keys: ["G", "C"], label: "Go to Calendar" },
+      { keys: ["G", "L"], label: "Go to Daily Notes" },
+      { keys: ["G", "G"], label: "Go to Graph View" },
+      { keys: ["G", "V"], label: "Go to Canvas" },
     ],
   },
   {

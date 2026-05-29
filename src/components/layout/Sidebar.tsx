@@ -17,6 +17,9 @@ import {
   Flame,
   Zap,
   X,
+  GitBranch,
+  CalendarDays,
+  Network,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStreakStore } from "@/store/streak.store";
@@ -34,7 +37,10 @@ const sections = [
   {
     label: "Study",
     items: [
-      { href: "/notes", label: "Notes", icon: StickyNote, shortcut: "G N" },
+      { href: "/notes",  label: "Notes",       icon: StickyNote,   shortcut: "G N" },
+      { href: "/daily",  label: "Daily Notes", icon: CalendarDays },
+      { href: "/graph",  label: "Graph View",  icon: GitBranch },
+      { href: "/canvas", label: "Canvas",      icon: Network },
       { href: "/flashcards", label: "Flashcards", icon: Layers, shortcut: "G F" },
       { href: "/quizzes", label: "Quizzes", icon: ListChecks, shortcut: "G Q" },
       { href: "/revision", label: "Revision", icon: BookOpen },
@@ -71,15 +77,17 @@ function SidebarContent({ collapsed, onClose }: { collapsed: boolean; onClose?: 
   return (
     <>
       <div className="flex items-center gap-2 px-5 h-16 border-b border-app shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-[var(--accent)] flex items-center justify-center shrink-0">
-          <Sparkles className="w-4 h-4 text-white" />
-        </div>
-        {(!collapsed || isMobile) && (
-          <div className="overflow-hidden flex-1 min-w-0">
-            <div className="font-semibold text-[14px] leading-tight tracking-tight">Vyro Notes</div>
-            <div className="text-[11px] text-text-tertiary leading-tight">Study Sanctuary</div>
+        <Link href="/" className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-[var(--accent)] flex items-center justify-center shrink-0">
+            <Sparkles className="w-4 h-4 text-white" />
           </div>
-        )}
+          {(!collapsed || isMobile) && (
+            <div className="overflow-hidden flex-1 min-w-0">
+              <div className="font-semibold text-[14px] leading-tight tracking-tight">Vyro Notes</div>
+              <div className="text-[11px] text-text-tertiary leading-tight">Study Sanctuary</div>
+            </div>
+          )}
+        </Link>
         {isMobile && (
           <button
             onClick={onClose}

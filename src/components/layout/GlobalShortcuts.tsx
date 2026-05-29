@@ -8,6 +8,9 @@ import toast from "react-hot-toast";
 const NAV: Record<string, string> = {
   d: "/dashboard",
   n: "/notes",
+  l: "/daily",       // G L → Daily notes
+  g: "/graph",       // G G → Graph view
+  v: "/canvas",      // G V → Canvas
   f: "/flashcards",
   q: "/quizzes",
   a: "/assignments",

@@ -23,6 +23,9 @@ import {
   BookOpen,
   Settings,
   LayoutDashboard,
+  CalendarDays,
+  GitBranch,
+  Network,
 } from "lucide-react";
 import { useThemeStore } from "@/store/theme.store";
 
@@ -39,7 +42,10 @@ const NAV = [
   { href: "/timer", label: "Pomodoro Timer", icon: TimerIcon },
   { href: "/ai-assistant", label: "AI Assistant", icon: Sparkles },
   { href: "/pdf-chat", label: "PDF Chat", icon: FileText },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/daily",       label: "Daily Notes",    icon: CalendarDays },
+  { href: "/graph",       label: "Graph View",     icon: GitBranch },
+  { href: "/canvas",      label: "Canvas",         icon: Network },
+  { href: "/settings",    label: "Settings",       icon: Settings },
 ];
 
 export function CommandPalette() {
