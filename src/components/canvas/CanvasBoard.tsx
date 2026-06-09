@@ -1,25 +1,5 @@
 "use client";
 
-/**
- * CanvasBoard.tsx
- *
- * Zero-external-library infinite canvas supporting:
- *  - Infinite pan (pointer-capture drag on background) and wheel zoom
- *  - Draggable sticky-note, concept, and text nodes
- *  - SVG cubic-bezier edges with midpoint ×-delete
- *  - Edge drawing via the per-node link button
- *  - Inline editing on double-click
- *  - Note side drawer (slide-from-right, no navigation)
- *  - Note picker search modal
- *  - PNG export via off-screen <canvas>
- *  - Del/⌫ to delete selected; Esc to deselect / cancel linking
- *
- * Exports
- * ───────
- *  CanvasBoardRef  — the default board component (forwardRef, imperative handle)
- *  CanvasBoardHandle — the ref interface used by the parent page toolbar
- */
-
 import {
   useRef,
   useState,
@@ -47,16 +27,12 @@ import { useNotesStore }    from "@/store/notes.store";
 import { subjectColor, wordCount, cn } from "@/lib/utils";
 import type { Note } from "@/lib/types";
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
 const MIN_ZOOM    = 0.2;
 const MAX_ZOOM    = 3;
 const NODE_COLORS = [
   "#7c6dfa", "#60a5fa", "#34d399", "#fb923c",
   "#fbbf24", "#f472b6", "#a3e635", "#818cf8",
 ];
-
-// ── Shared helpers (module-level — not re-created on every render) ─────────────
 
 function clamp(v: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, v));
@@ -371,8 +347,6 @@ function NoteDrawer({ note, onClose }: { note: Note; onClose: () => void }) {
   );
 }
 
-// ── Imperative handle type ────────────────────────────────────────────────────
-
 export interface CanvasBoardHandle {
   addTextNode:    () => void;
   addConceptNode: () => void;
@@ -381,8 +355,6 @@ export interface CanvasBoardHandle {
   clearAll:       () => void;
   resetViewport:  () => void;
 }
-
-// ── CanvasBoardRef — the single exported board component ──────────────────────
 
 export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
   function CanvasBoardRef(_props, ref) {
@@ -413,7 +385,6 @@ export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
       origX:  number; origY:  number;
     } | null>(null);
 
-    // ── Coordinate conversion ────────────────────────────────────────────────
     const screenToCanvas = useCallback((sx: number, sy: number) => {
       const { x, y, zoom } = viewport;
       const rect = boardRef.current?.getBoundingClientRect();
@@ -429,7 +400,6 @@ export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
       );
     }, [screenToCanvas]);
 
-    // ── Imperative handle ────────────────────────────────────────────────────
     const addTextNodeFn    = useCallback(() => { const { cx, cy } = nextPos(); addNode({ type: "text", label: "Label", x: cx, y: cy, width: 120 }); }, [addNode, nextPos]);
     const addConceptNodeFn = useCallback(() => {
       const { cx, cy } = nextPos();
@@ -448,11 +418,9 @@ export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
       const ctx   = cvs.getContext("2d")!;
       ctx.scale(SCALE, SCALE);
 
-      // Background
       ctx.fillStyle = "#08080c";
       ctx.fillRect(0, 0, rect.width, rect.height);
 
-      // Grid dots
       ctx.fillStyle = "rgba(255,255,255,0.04)";
       const gs = 32 * viewport.zoom;
       const ox = viewport.x % gs;
@@ -466,7 +434,6 @@ export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
       ctx.translate(viewport.x, viewport.y);
       ctx.scale(viewport.zoom, viewport.zoom);
 
-      // Edges
       ctx.strokeStyle = "rgba(124,109,250,0.45)";
       ctx.lineWidth   = 1.5 / viewport.zoom;
       ctx.setLineDash([5, 3]);
@@ -484,7 +451,6 @@ export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
       }
       ctx.setLineDash([]);
 
-      // Nodes
       for (const node of nodes) {
         const note  = node.noteId ? noteMap.get(node.noteId) : undefined;
         const color = note ? subjectColor(note.subject) : (node.color || "#7c6dfa");
@@ -533,7 +499,6 @@ export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
       resetViewport,
     }));
 
-    // ── Pointer handlers ─────────────────────────────────────────────────────
     const handleNodePointerDown = useCallback((e: React.PointerEvent, nodeId: string) => {
       e.stopPropagation();
       if (e.button !== 0) return;
@@ -595,7 +560,6 @@ export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
       });
     }, [viewport, setViewport]);
 
-    // ── Keyboard shortcuts ───────────────────────────────────────────────────
     useEffect(() => {
       const handler = (e: KeyboardEvent) => {
         const tag = (document.activeElement as HTMLElement | null)?.tagName;
@@ -614,7 +578,6 @@ export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
       return () => window.removeEventListener("keydown", handler);
     }, [selectedId, removeNode]);
 
-    // ── Note picker filter ───────────────────────────────────────────────────
     const filteredNotes = useMemo(() => {
       const q = noteSearch.toLowerCase().trim();
       return q
@@ -622,11 +585,10 @@ export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
         : visibleNotes.slice(0, 12);
     }, [visibleNotes, noteSearch]);
 
-    // ── Render ───────────────────────────────────────────────────────────────
     return (
       <div className="relative w-full h-full overflow-hidden" style={{ background: "var(--bg-base, #08080c)" }}>
 
-        {/* Grid background */}
+        {}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.35 }}>
           <defs>
             <pattern
@@ -641,7 +603,7 @@ export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
           <rect width="100%" height="100%" fill="url(#canvas-grid)" />
         </svg>
 
-        {/* Pan + drag surface */}
+        {}
         <div
           ref={boardRef}
           className="absolute inset-0"
@@ -651,7 +613,7 @@ export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
           onPointerUp={() => { dragging.current = null; }}
           onWheel={handleWheel}
         >
-          {/* SVG edge layer */}
+          {}
           <svg ref={svgRef} className="absolute inset-0 w-full h-full" style={{ overflow: "visible", pointerEvents: "none" }}>
             <g
               style={{ transform: `translate(${viewport.x}px,${viewport.y}px) scale(${viewport.zoom})` }}
@@ -670,7 +632,7 @@ export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
             </g>
           </svg>
 
-          {/* Node layer */}
+          {}
           <div
             className="absolute inset-0"
             style={{ transform: `translate(${viewport.x}px,${viewport.y}px) scale(${viewport.zoom})`, transformOrigin: "0 0" }}
@@ -700,12 +662,12 @@ export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
           </div>
         </div>
 
-        {/* Note side drawer */}
+        {}
         <AnimatePresence>
           {openNote && <NoteDrawer note={openNote} onClose={() => setOpenNote(null)} />}
         </AnimatePresence>
 
-        {/* Note picker modal */}
+        {}
         <AnimatePresence>
           {notePickerOpen && (
             <>
@@ -779,7 +741,7 @@ export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
           )}
         </AnimatePresence>
 
-        {/* Linking hint banner */}
+        {}
         <AnimatePresence>
           {linkingFrom && (
             <motion.div
@@ -792,7 +754,7 @@ export const CanvasBoardRef = forwardRef<CanvasBoardHandle>(
           )}
         </AnimatePresence>
 
-        {/* Zoom indicator */}
+        {}
         <div
           className="absolute bottom-4 right-4 text-[11px] tabular-nums px-2 py-1 rounded-md z-20"
           style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", color: "var(--text-tertiary)" }}
