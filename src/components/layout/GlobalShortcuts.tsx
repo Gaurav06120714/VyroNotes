@@ -8,9 +8,9 @@ import toast from "react-hot-toast";
 const NAV: Record<string, string> = {
   d: "/dashboard",
   n: "/notes",
-  l: "/daily",       // G L → Daily notes
-  g: "/graph",       // G G → Graph view
-  v: "/canvas",      // G V → Canvas
+  l: "/daily",       
+  g: "/graph",       
+  v: "/canvas",      
   f: "/flashcards",
   q: "/quizzes",
   a: "/assignments",
@@ -36,7 +36,6 @@ export function GlobalShortcuts() {
           target.tagName === "TEXTAREA" ||
           target.isContentEditable);
 
-      // Cmd+N → new note
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === "n") {
         e.preventDefault();
         const n = createNote({ title: "Untitled" });
@@ -45,7 +44,6 @@ export function GlobalShortcuts() {
         return;
       }
 
-      // Cmd+Shift+N → quick capture
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "n") {
         e.preventDefault();
         const n = createNote({ title: "Quick capture", content: "" });
@@ -54,14 +52,12 @@ export function GlobalShortcuts() {
         return;
       }
 
-      // Cmd+/ → toggle sidebar
       if ((e.metaKey || e.ctrlKey) && e.key === "/") {
         e.preventDefault();
         toggleSidebar();
         return;
       }
 
-      // Cmd+? → shortcuts
       if ((e.metaKey || e.ctrlKey) && (e.key === "?" || (e.shiftKey && e.key === "/"))) {
         e.preventDefault();
         setShortcutsOpen(true);
@@ -70,7 +66,6 @@ export function GlobalShortcuts() {
 
       if (isInput) return;
 
-      // G then [letter]
       if (e.key.toLowerCase() === "g" && !e.metaKey && !e.ctrlKey) {
         lastGAt.current = Date.now();
         return;
