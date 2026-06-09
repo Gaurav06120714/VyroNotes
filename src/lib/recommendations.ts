@@ -1,4 +1,3 @@
-// Personalized recommendation engine — rules-based against store snapshots.
 import { Note, Assignment, Exam, FlashcardDeck } from "@/lib/types";
 import { daysUntil } from "@/lib/utils";
 
@@ -23,7 +22,6 @@ export function generateRecommendations(input: Input): Recommendation[] {
   const out: Recommendation[] = [];
   const { notes, assignments, exams, decks, streak } = input;
 
-  // Upcoming critical exams
   const sortedExams = [...exams].sort((a, b) => +new Date(a.date) - +new Date(b.date));
   const closestExam = sortedExams[0];
   if (closestExam) {
@@ -40,7 +38,6 @@ export function generateRecommendations(input: Input): Recommendation[] {
     }
   }
 
-  // Stale notes (>3 days since update on a frequently-edited subject)
   const staleNotes = notes
     .filter((n) => !n.archived && !n.trashed)
     .filter((n) => daysUntil(n.updatedAt) < -3)
@@ -57,7 +54,6 @@ export function generateRecommendations(input: Input): Recommendation[] {
     });
   }
 
-  // Low-mastery deck nudge
   const weakDeck = decks
     .map((d) => ({
       d,
@@ -78,7 +74,6 @@ export function generateRecommendations(input: Input): Recommendation[] {
     });
   }
 
-  // Overdue assignment
   const overdue = assignments
     .filter((a) => a.status !== "done" && daysUntil(a.dueDate) < 0)
     .sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate))[0];
@@ -93,7 +88,6 @@ export function generateRecommendations(input: Input): Recommendation[] {
     });
   }
 
-  // Streak hype
   if (streak >= 7 && streak < 30) {
     out.push({
       id: "streak-momentum",
