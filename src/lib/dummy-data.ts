@@ -917,7 +917,6 @@ export const DUMMY_EVENTS: CalendarEvent[] = [
   { id: "ev-s4", title: "CS practice problems", type: "study", date: addDays(3), subject: "CS" },
 ];
 
-// Last 30 days of streak (mostly green, some breaks)
 export function generateStreak(): { date: string; minutes: number }[] {
   const out: { date: string; minutes: number }[] = [];
   for (let i = 29; i >= 0; i--) {
