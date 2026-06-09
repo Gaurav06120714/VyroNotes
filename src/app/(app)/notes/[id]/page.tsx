@@ -77,19 +77,16 @@ export default function NoteEditorPage() {
   const [showProps, setShowProps] = useState(false);
   const [newTag, setNewTag] = useState("");
 
-  // Slash menu state
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashQuery, setSlashQuery] = useState("");
   const [slashPosition, setSlashPosition] = useState({ top: 0, left: 0 });
   const [slashStart, setSlashStart] = useState(-1);
 
-  // WikiLink popover state
   const [wikiOpen, setWikiOpen] = useState(false);
   const [wikiQuery, setWikiQuery] = useState("");
   const [wikiPosition, setWikiPosition] = useState({ top: 0, left: 0 });
   const [wikiStart, setWikiStart] = useState(-1);
 
-  // Selection toolbar state
   const [selectionToolbar, setSelectionToolbar] = useState<{ visible: boolean; top: number; left: number; text: string }>({
     visible: false,
     top: 0,
@@ -120,7 +117,6 @@ export default function NoteEditorPage() {
   const words = useMemo(() => wordCount(content), [content]);
   const minutes = useMemo(() => readingTime(content), [content]);
 
-  // F toggles focus mode
   useKeyboardShortcut("f", () => {
     if ((document.activeElement as HTMLElement | null)?.tagName === "TEXTAREA") return;
     if ((document.activeElement as HTMLElement | null)?.tagName === "INPUT") return;
@@ -154,7 +150,6 @@ export default function NoteEditorPage() {
     }, 0);
   };
 
-  /** Shared line-height-based caret position estimator (avoids heavy DOM mirror). */
   const estimateCaretPos = (
     ta: HTMLTextAreaElement,
     markerIdx: number,
@@ -166,15 +161,12 @@ export default function NoteEditorPage() {
     return { top, left: 16 };
   };
 
-  // Slash command handling + WikiLink detection
   const onContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
     setContent(newContent);
     const ta = e.target;
     const caret = ta.selectionStart;
 
-    // ── WikiLink `[[` detection ──────────────────────────────────────────────
-    // Find the last `[[` that is still open (no matching `]]` after it).
     const doubleBracketIdx = newContent.lastIndexOf("[[", caret - 1);
     const closingIdx       = newContent.indexOf("]]", doubleBracketIdx);
     const wikiActive =
@@ -184,7 +176,7 @@ export default function NoteEditorPage() {
 
     if (wikiActive) {
       const query = newContent.slice(doubleBracketIdx + 2, caret);
-      // Close if user inserted a newline or a closing bracket inside the query
+      
       if (query.includes("\n") || query.includes("]]")) {
         setWikiOpen(false);
       } else {
@@ -196,7 +188,7 @@ export default function NoteEditorPage() {
           setWikiPosition({ top: Math.min(top, wrapRect.height - 280), left });
         }
         setWikiOpen(true);
-        // WikiLink takes priority — close slash menu
+        
         setSlashOpen(false);
         return;
       }
@@ -204,7 +196,6 @@ export default function NoteEditorPage() {
       setWikiOpen(false);
     }
 
-    // ── Slash command detection ──────────────────────────────────────────────
     const lineStart = newContent.lastIndexOf("\n", caret - 1) + 1;
     const slashIdx  = newContent.lastIndexOf("/", caret - 1);
 
@@ -236,11 +227,11 @@ export default function NoteEditorPage() {
     const after = content.slice(caret);
     let insertText = action.insert;
     if (action.id === "ai") {
-      // Kick off async AI continuation after inserting a placeholder
+      
       insertText = "\n\n> AI: generating…\n\n";
       toast.loading("Generating AI continuation…", { id: "ai-cont" });
       const beforeText = content.slice(0, slashStart);
-      const contextText = beforeText.slice(-800); // last 800 chars for context
+      const contextText = beforeText.slice(-800); 
       fetch("/api/ai/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -272,7 +263,6 @@ export default function NoteEditorPage() {
     }, 0);
   };
 
-  // Selection handling for AI toolbar
   const checkSelection = useCallback(() => {
     const ta = editorRef.current;
     if (!ta) return;
@@ -281,7 +271,7 @@ export default function NoteEditorPage() {
       const selected = content.slice(selectionStart, selectionEnd).trim();
       if (selected.length > 4) {
         const rect = ta.getBoundingClientRect();
-        // Approx position above the selection start
+        
         setSelectionToolbar({
           visible: true,
           top: rect.top + 8,
@@ -331,7 +321,7 @@ export default function NoteEditorPage() {
         toast.error(data.error ?? "AI request failed");
         return;
       }
-      // Insert result as a blockquote after current cursor / selection
+      
       const ta = editorRef.current;
       if (ta) {
         const insertAt = ta.selectionEnd;
@@ -350,8 +340,8 @@ export default function NoteEditorPage() {
     const ta = editorRef.current;
     if (!ta || wikiStart < 0) return;
     const caret = ta.selectionStart;
-    const before = content.slice(0, wikiStart);       // everything before `[[`
-    const after  = content.slice(caret);               // everything after cursor
+    const before = content.slice(0, wikiStart);       
+    const after  = content.slice(caret);               
     const inserted = `[[${title}]]`;
     const next = before + inserted + after;
     setContent(next);
@@ -364,7 +354,7 @@ export default function NoteEditorPage() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // WikiLink popover consumes nav keys via window capture listener
+    
     if (wikiOpen) {
       if (["ArrowDown", "ArrowUp", "Enter", "Escape"].includes(e.key)) {
         if (e.key === "Enter") e.preventDefault();
@@ -372,7 +362,7 @@ export default function NoteEditorPage() {
       }
     }
     if (slashOpen) {
-      // Slash menu handles its own keys via window listener
+      
       if (["ArrowDown", "ArrowUp", "Enter", "Escape"].includes(e.key)) {
         if (e.key === "Enter") e.preventDefault();
         return;
@@ -441,7 +431,7 @@ export default function NoteEditorPage() {
         );
         if (!text) return;
         try {
-          // Strip markdown code fences if present
+          
           const cleaned = text.replace(/```(?:json)?\n?/g, "").replace(/```/g, "").trim();
           const start = cleaned.indexOf("[");
           const end   = cleaned.lastIndexOf("]");
@@ -492,12 +482,12 @@ export default function NoteEditorPage() {
           const end   = cleaned.lastIndexOf("]");
           if (start === -1 || end === -1) throw new Error("No JSON array found");
           const cards = JSON.parse(cleaned.slice(start, end + 1)) as Array<{ front: string; back: string }>;
-          // Create deck then populate
+          
           const { uid: uidFn } = await import("@/lib/utils");
           const deckId = uidFn();
-          // Use createDeck to add empty deck, then addCardsToDeck
+          
           createDeck(`${title} — AI Deck`, subject);
-          // We need the deckId — createDeck doesn't return it, so grab the latest
+          
           const storeDecks = (await import("@/store/flashcards.store")).useFlashcardsStore.getState().decks;
           const newDeck = storeDecks[storeDecks.length - 1];
           if (newDeck) {
@@ -536,7 +526,7 @@ export default function NoteEditorPage() {
 
   return (
     <div className={cn("mx-auto", focusMode ? "max-w-3xl" : "max-w-7xl")}>
-      {/* Focus mode exit pill */}
+      {}
       <AnimatePresence>
         {focusMode && (
           <motion.button
@@ -551,7 +541,7 @@ export default function NoteEditorPage() {
         )}
       </AnimatePresence>
 
-      {/* Header */}
+      {}
       {!focusMode && (
         <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
           <div className="flex items-center gap-2">
@@ -644,7 +634,7 @@ export default function NoteEditorPage() {
         </div>
       )}
 
-      {/* Reading mode */}
+      {}
       {readingMode ? (
         <div className="card-v2 min-h-[60vh]">
           <input
@@ -715,7 +705,7 @@ export default function NoteEditorPage() {
             </div>
           )}
 
-          {/* Toolbar */}
+          {}
           {!focusMode && (
             <div className="card-v2 mb-4 p-1.5 flex items-center gap-0.5 overflow-x-auto no-scrollbar">
               {[
@@ -743,7 +733,7 @@ export default function NoteEditorPage() {
             </div>
           )}
 
-          {/* AI Panel */}
+          {}
           {showAI && (
             <div className="card-v2 mb-4" style={{ borderColor: "rgba(124,109,250,0.30)" }}>
               <div className="flex items-center gap-2 mb-3">
@@ -767,7 +757,7 @@ export default function NoteEditorPage() {
             </div>
           )}
 
-          {/* Editor grid: editor + (preview) + backlinks + (properties) */}
+          {}
           <div
             className={cn(
               "grid gap-4",
@@ -832,7 +822,7 @@ export default function NoteEditorPage() {
         </>
       )}
 
-      {/* Selection AI toolbar */}
+      {}
       <SelectionToolbar
         visible={selectionToolbar.visible}
         position={{ top: selectionToolbar.top, left: selectionToolbar.left }}
