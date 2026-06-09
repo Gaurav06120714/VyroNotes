@@ -26,6 +26,7 @@ import { useStreakStore } from "@/store/streak.store";
 import { useUIStore } from "@/store/ui.store";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect } from "react";
+import { SyncIndicator } from "@/components/layout/SyncIndicator";
 
 const sections = [
   {
@@ -176,6 +177,11 @@ function SidebarContent({ collapsed, onClose }: { collapsed: boolean; onClose?: 
           <Settings className="w-4 h-4" />
           {(!collapsed || isMobile) && <span>Settings</span>}
         </Link>
+        {(!collapsed || isMobile) && (
+          <div className="mt-2 px-1">
+            <SyncIndicator />
+          </div>
+        )}
       </div>
     </>
   );
@@ -185,14 +191,13 @@ export function Sidebar() {
   const { sidebarOpen, sidebarDrawerOpen, setSidebarDrawerOpen } = useUIStore();
   const pathname = usePathname();
 
-  // Close drawer on route change
   useEffect(() => {
     setSidebarDrawerOpen(false);
   }, [pathname, setSidebarDrawerOpen]);
 
   return (
     <>
-      {/* Desktop sticky sidebar */}
+      {}
       <motion.aside
         initial={false}
         animate={{ width: sidebarOpen ? 248 : 68 }}
@@ -202,7 +207,7 @@ export function Sidebar() {
         <SidebarContent collapsed={!sidebarOpen} />
       </motion.aside>
 
-      {/* Mobile drawer */}
+      {}
       <AnimatePresence>
         {sidebarDrawerOpen && (
           <>
