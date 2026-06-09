@@ -1,40 +1,84 @@
-/**
- * POST /api/ai/chat
- *
- * Streaming chat endpoint backed by Ollama.
- * Body: { messages: OllamaMessage[], model?: string }
- * Returns: text/event-stream (chunks of raw text)
- */
-
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { streamChat, OllamaError, PRIMARY_MODEL } from "@/lib/ollama";
-import type { OllamaMessage } from "@/lib/ollama";
 
 export const runtime = "nodejs";
 
-interface ChatRequestBody {
-  messages: OllamaMessage[];
-  model?: string;
+const MessageSchema = z.object({
+  role: z.enum(["system", "user", "assistant"]),
+  content: z.string().min(1).max(32_000),
+});
+
+const ChatBodySchema = z.object({
+  messages: z.array(MessageSchema).min(1).max(100),
+  model: z.string().optional(),
+});
+
+const rlMap = new Map<string, number[]>();
+
+function checkRateLimit(key: string, limit = 20, windowMs = 60_000): boolean {
+  const now = Date.now();
+  let timestamps = rlMap.get(key) ?? [];
+  timestamps = timestamps.filter((t) => now - t < windowMs);
+  if (timestamps.length >= limit) return false;
+  timestamps.push(now);
+  rlMap.set(key, timestamps);
+  return true;
+}
+
+const hasSupabase =
+  !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  process.env.NEXT_PUBLIC_SUPABASE_URL !== "your_supabase_url";
+
+async function getSessionUserId(req: NextRequest): Promise<string | null> {
+  if (!hasSupabase) return "anonymous";
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.user.id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(req: NextRequest) {
-  let body: ChatRequestBody;
+  
+  const userId = await getSessionUserId(req);
+  if (!userId) {
+    return NextResponse.json(
+      { error: "Unauthorized. Please sign in." },
+      { status: 401 }
+    );
+  }
+
+  if (!checkRateLimit(`chat:${userId}`)) {
+    return NextResponse.json(
+      { error: "Too many requests. Wait a moment before sending another message." },
+      { status: 429 }
+    );
+  }
+
+  let rawBody: unknown;
   try {
-    body = await req.json() as ChatRequestBody;
+    rawBody = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { messages, model = PRIMARY_MODEL } = body;
-
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return NextResponse.json({ error: "messages array required" }, { status: 400 });
+  const parsed = ChatBodySchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid request body", details: parsed.error.flatten() },
+      { status: 400 }
+    );
   }
 
-  const abortController = new AbortController();
-  const timeoutId = setTimeout(() => abortController.abort(), 30000);
+  const { messages, model = PRIMARY_MODEL } = parsed.data;
 
-  // Set up connection close → abort
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => abortController.abort(), 60_000);
+
   req.signal.addEventListener("abort", () => {
     abortController.abort();
     clearTimeout(timeoutId);
