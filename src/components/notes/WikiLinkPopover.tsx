@@ -1,39 +1,5 @@
 "use client";
 
-/**
- * WikiLinkPopover.tsx
- *
- * Obsidian-style [[wikilink]] autocomplete popover for the note textarea.
- *
- * Integration contract (mirrors SlashMenu exactly):
- *
- *   Parent detects `[[` in onContentChange, sets:
- *     wikiOpen={true}
- *     wikiQuery={text after `[[`}
- *     wikiPosition={top, left} relative to the editor wrapper
- *     wikiStart={index of the first `[` in raw content}
- *
- *   This component:
- *     - fuzzy-filters all non-trashed, non-archived notes by title
- *     - handles ArrowUp / ArrowDown / Enter / Escape internally
- *     - calls onPick(noteTitle) when an item is selected
- *     - calls onClose() on Escape or when results are empty
- *
- *   Parent on onPick(title):
- *     const before  = content.slice(0, wikiStart);
- *     const after   = content.slice(caretPos);        // everything after current cursor
- *     setContent(before + `[[${title}]]` + after);
- *     // then move cursor to end of inserted link
- *
- * Fuzzy search:
- *   Two-tier ranking:
- *     1. title.startsWith(query)  → tier 0  (sorted by title length asc)
- *     2. title.includes(query)    → tier 1  (sorted by title length asc)
- *   Both tiers are case-insensitive. Duplicate results are impossible because
- *   startsWith ⊂ includes — tier 1 is the set-difference.
- *   The matched portion of the title is highlighted with the accent colour.
- */
-
 import { useEffect, useRef, useState, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link2, StickyNote } from "lucide-react";
@@ -41,39 +7,22 @@ import { useNotesStore } from "@/store/notes.store";
 import { subjectColor } from "@/lib/utils";
 import type { Note } from "@/lib/types";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 export interface WikiLinkPopoverProps {
-  /** Whether the popover is currently open. */
+  
   open: boolean;
 
-  /**
-   * The text typed after `[[`.
-   * e.g. if content contains `[[Calc` the query is `"Calc"`.
-   */
   query: string;
 
-  /**
-   * Position relative to the nearest `position:relative` ancestor
-   * (the editor wrapper div). Both top and left in px.
-   */
   position: { top: number; left: number };
 
-  /**
-   * Called when user selects a note title.
-   * Parent is responsible for inserting `[[title]]` into content.
-   */
   onPick: (title: string) => void;
 
-  /** Called on Escape or when the filtered list becomes empty. */
   onClose: () => void;
 }
 
-// ── Fuzzy search ──────────────────────────────────────────────────────────────
-
 interface SearchResult {
   note: Note;
-  /** Index where the query starts in the lowercased title — used for highlight. */
+  
   matchIndex: number;
   tier: 0 | 1;
 }
@@ -81,7 +30,7 @@ interface SearchResult {
 function fuzzySearch(notes: Note[], query: string): SearchResult[] {
   const q = query.toLowerCase().trim();
   if (!q) {
-    // No query → return first 8 notes sorted alphabetically
+    
     return notes
       .slice()
       .sort((a, b) => a.title.localeCompare(b.title))
@@ -104,14 +53,11 @@ function fuzzySearch(notes: Note[], query: string): SearchResult[] {
     }
   }
 
-  // Within each tier, shorter titles rank first (more precise match)
   const byLength = (a: SearchResult, b: SearchResult) =>
     a.note.title.length - b.note.title.length;
 
   return [...tier0.sort(byLength), ...tier1.sort(byLength)].slice(0, 10);
 }
-
-// ── Highlighted title ─────────────────────────────────────────────────────────
 
 function HighlightedTitle({
   title,
@@ -152,8 +98,6 @@ function HighlightedTitle({
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
 export function WikiLinkPopover({
   open,
   query,
@@ -161,46 +105,38 @@ export function WikiLinkPopover({
   onPick,
   onClose,
 }: WikiLinkPopoverProps) {
-  // ── Raw notes from store — never filter inside the selector (Zustand v5) ──
+  
   const notes = useNotesStore((s) => s.notes);
 
-  // Derive visible notes outside the selector
   const visibleNotes = useMemo(
     () => notes.filter((n) => !n.trashed && !n.archived),
     [notes]
   );
 
-  // Fuzzy search results
   const results = useMemo(
     () => fuzzySearch(visibleNotes, query),
     [visibleNotes, query]
   );
 
-  // Keyboard active index
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Scrollable list ref — used to scroll active item into view
   const listRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLButtonElement>(null);
 
-  // Reset active index when query or results change
   useEffect(() => {
     setActiveIndex(0);
   }, [query, open]);
 
-  // Scroll active item into view
   useEffect(() => {
     activeRef.current?.scrollIntoView({ block: "nearest" });
   }, [activeIndex]);
 
-  // Close when results dry up (and there's an active query)
   useEffect(() => {
     if (open && query.trim().length > 0 && results.length === 0) {
       onClose();
     }
   }, [open, query, results.length, onClose]);
 
-  // Keyboard navigation — window listener mirrors SlashMenu pattern
   useEffect(() => {
     if (!open) return;
 
@@ -236,12 +172,9 @@ export function WikiLinkPopover({
       }
     };
 
-    // useCapture:true so we intercept before the textarea's own keydown
     window.addEventListener("keydown", handler, true);
     return () => window.removeEventListener("keydown", handler, true);
   }, [open, results, activeIndex, onPick, onClose]);
-
-  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <AnimatePresence>
@@ -258,12 +191,12 @@ export function WikiLinkPopover({
             width: 280,
             boxShadow: "0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px var(--border-strong)",
           }}
-          // Prevent clicks inside the popover from blurring the textarea
+          
           onMouseDown={(e) => e.preventDefault()}
           role="listbox"
           aria-label="Link to note"
         >
-          {/* Header */}
+          {}
           <div
             className="flex items-center gap-2 px-3 pt-2.5 pb-1.5"
             style={{ borderBottom: "1px solid var(--border)" }}
@@ -285,11 +218,11 @@ export function WikiLinkPopover({
             )}
           </div>
 
-          {/* Results list — max 5 rows visible, scrollable */}
+          {}
           <div
             ref={listRef}
             className="overflow-y-auto no-scrollbar py-1"
-            style={{ maxHeight: 232 }} // ~5 items at 44px each + padding
+            style={{ maxHeight: 232 }} 
           >
             {results.map((result, i) => {
               const { note, matchIndex } = result;
@@ -312,13 +245,13 @@ export function WikiLinkPopover({
                   role="option"
                   aria-selected={active}
                 >
-                  {/* Subject colour dot */}
+                  {}
                   <span
                     className="w-2 h-2 rounded-full shrink-0"
                     style={{ background: dotColor }}
                   />
 
-                  {/* Title + subject */}
+                  {}
                   <div className="flex-1 min-w-0">
                     <HighlightedTitle
                       title={note.title}
@@ -336,7 +269,7 @@ export function WikiLinkPopover({
                     </div>
                   </div>
 
-                  {/* Active indicator */}
+                  {}
                   {active && (
                     <span
                       className="text-[10px] px-1.5 py-0.5 rounded-md shrink-0"
@@ -353,7 +286,7 @@ export function WikiLinkPopover({
             })}
           </div>
 
-          {/* Footer hint */}
+          {}
           <div
             className="flex items-center gap-3 px-3 py-1.5"
             style={{ borderTop: "1px solid var(--border)" }}
