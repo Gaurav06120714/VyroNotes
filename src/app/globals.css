@@ -1,15 +1,11 @@
 @import "tailwindcss";
-
-/* Reduced motion safety */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
 }
-
 :root {
-  /* Calmer, more mature palette — Apple/Linear inspired */
   --bg-base: #08080c;
   --bg-surface: #101015;
   --bg-elevated: #16161e;
@@ -30,15 +26,12 @@
   --info: #4d8df6;
   --pink: #ec4899;
   --cyan: #06b6d4;
-
-  /* Radius scale */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 20px;
   --radius-full: 9999px;
 }
-
 [data-theme="light"] {
   --bg-base: #fafafa;
   --bg-surface: #ffffff;
@@ -51,7 +44,6 @@
   --text-tertiary: #8a8a98;
   --accent-soft: rgba(124, 109, 250, 0.08);
 }
-
 @theme inline {
   --color-bg-base: var(--bg-base);
   --color-bg-surface: var(--bg-surface);
@@ -67,8 +59,6 @@
   --color-danger: var(--danger);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains);
-
-  /* Typography scale — tighter, more refined */
   --text-xs: 11px;
   --text-sm: 13px;
   --text-base: 14px;
@@ -79,11 +69,9 @@
   --text-3xl: 32px;
   --text-4xl: 44px;
 }
-
 * {
   border-color: var(--border);
 }
-
 html, body {
   background: var(--bg-base);
   color: var(--text-primary);
@@ -94,21 +82,16 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: "cv11", "ss01", "ss03";
 }
-
 html {
   scroll-behavior: smooth;
 }
-
 body {
   background-image: none;
 }
-
 ::selection {
   background: var(--accent);
   color: white;
 }
-
-/* Subtle, modern scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -123,8 +106,6 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-tertiary);
 }
-
-/* Flat surface utilities */
 .glass {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -136,13 +117,9 @@ body {
 [data-theme="light"] .glass-strong {
   background: #ffffff;
 }
-
-/* Flat background tint — removed gradient */
 .subtle-bg {
   background-image: none;
 }
-
-/* Grain texture — production polish */
 .grain::before {
   content: "";
   position: absolute;
@@ -152,14 +129,11 @@ body {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.9' /></filter><rect width='200' height='200' filter='url(%23n)' /></svg>");
   mix-blend-mode: overlay;
 }
-
 .elevated {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
-
-/* Subtle accent indicator — no glow */
 .accent-pulse {
   position: relative;
 }
@@ -171,12 +145,10 @@ body {
   box-shadow: 0 0 0 0 var(--accent-glow);
   animation: pulse-subtle 2s ease-out infinite;
 }
-
 @keyframes pulse-subtle {
   0% { box-shadow: 0 0 0 0 var(--accent-glow); }
   100% { box-shadow: 0 0 0 12px transparent; }
 }
-
 .hover-lift {
   transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
@@ -184,28 +156,19 @@ body {
   transform: translateY(-1px);
   border-color: var(--border-strong);
 }
-
-/* Accent text — flat */
 .gradient-text {
   color: var(--accent);
 }
-
 .gradient-accent {
   background: var(--accent);
 }
-
-/* Flat hero background */
 .mesh-bg {
   background-image: none;
 }
-
-/* Subtle divider */
 .divider {
   height: 1px;
   background: var(--border);
 }
-
-/* Animation utilities */
 @keyframes float-soft {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-4px); }
@@ -213,7 +176,6 @@ body {
 .float-anim {
   animation: float-soft 5s ease-in-out infinite;
 }
-
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -223,8 +185,6 @@ body {
   background-size: 200% 100%;
   animation: shimmer 1.4s linear infinite;
 }
-
-/* Focus management */
 .focus-ring {
   outline: 2px solid transparent;
   outline-offset: 2px;
@@ -233,14 +193,11 @@ body {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
-
-/* Primary button — solid, refined, no gradient */
 .btn-primary {
   background: var(--accent);
   color: white;
@@ -263,7 +220,6 @@ body {
 }
 .btn-primary:active { transform: scale(0.99); }
 .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
-
 .btn-ghost {
   background: transparent;
   color: var(--text-primary);
@@ -283,7 +239,6 @@ body {
   border-color: var(--border-strong);
   background: var(--bg-elevated);
 }
-
 .btn-secondary {
   background: var(--bg-elevated);
   color: var(--text-primary);
@@ -303,16 +258,12 @@ body {
   border-color: var(--border-strong);
   background: var(--bg-surface);
 }
-
-/* Legacy card kept for backwards compat */
 .card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 20px;
 }
-
-/* New unified v2 card — clean, consistent */
 .card-v2 {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -324,15 +275,12 @@ body {
   border-color: var(--border-strong);
   background: color-mix(in srgb, var(--bg-surface) 96%, white 4%);
 }
-
-/* Compact stat card */
 .stat-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 14px 16px;
 }
-
 .input-base {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
@@ -349,22 +297,14 @@ body {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 .input-base::placeholder { color: var(--text-tertiary); }
-
-/* Hide scrollbar utility */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* Safe area helpers */
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
-
-/* Mobile pb utility for bottom nav clearance */
 .pb-mobile {
   padding-bottom: calc(env(safe-area-inset-bottom, 0) + 80px);
 }
-
-/* Prose for markdown — refined typography */
 .prose-app {
   color: var(--text-primary);
   font-size: 15px;
@@ -417,8 +357,6 @@ body {
 .prose-app table { border-collapse: collapse; margin: 1.25rem 0; width: 100%; font-size: 14px; }
 .prose-app th, .prose-app td { border: 1px solid var(--border); padding: 9px 14px; text-align: left; }
 .prose-app th { background: var(--bg-elevated); font-weight: 600; }
-
-/* Reading mode — serif, max width, beautiful spacing */
 .prose-reading {
   font-family: "Iowan Old Style", "Charter", "Georgia", serif;
   max-width: 680px;
@@ -431,15 +369,11 @@ body {
 .prose-reading h2 { font-size: 26px; margin: 1.75rem 0 0.85rem; }
 .prose-reading h3 { font-size: 20px; margin: 1.5rem 0 0.75rem; }
 .prose-reading p { font-size: 18px; line-height: 1.8; margin: 1rem 0; color: var(--text-primary); }
-
-/* Tighter editor textarea baseline */
 .editor-area {
   font-family: var(--font-jetbrains), ui-monospace, monospace;
   font-size: 14px;
   line-height: 1.7;
 }
-
-/* Kbd styling */
 kbd {
   font-family: var(--font-jetbrains), ui-monospace, monospace;
   font-size: 10px;
@@ -450,16 +384,12 @@ kbd {
   color: var(--text-secondary);
   line-height: 1.2;
 }
-
-/* Skeleton shimmer base */
 .skeleton {
   background: linear-gradient(90deg, var(--bg-elevated) 0%, var(--bg-surface) 50%, var(--bg-elevated) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.4s linear infinite;
   border-radius: var(--radius-sm);
 }
-
-/* Heatmap day */
 .heat-0 { background: var(--bg-elevated); }
 .heat-1 { background: rgba(124, 109, 250, 0.20); }
 .heat-2 { background: rgba(124, 109, 250, 0.40); }
