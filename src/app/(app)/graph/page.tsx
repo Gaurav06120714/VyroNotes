@@ -8,8 +8,6 @@ import { buildGraphData } from "@/lib/buildGraphData";
 import { GraphView } from "@/components/graph/GraphView";
 import { fadeUp, fadeUpTransition, stagger, staggerItem } from "@/lib/animations";
 
-// ── Stat pill ─────────────────────────────────────────────────────────────────
-
 interface StatPillProps {
   icon: React.ReactNode;
   label: string;
@@ -48,21 +46,15 @@ function StatPill({ icon, label, value, accent }: StatPillProps) {
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
-
 export default function GraphPage() {
-  // Zustand v5 best practice: select the raw array, never derive inside selector.
+  
   const notes = useNotesStore((s) => s.notes);
 
-  // Derive visible (non-trashed, non-archived) notes outside the selector.
   const visibleNotes = useMemo(
     () => notes.filter((n) => !n.trashed && !n.archived),
     [notes]
   );
 
-  // Build graph stats for the header pills — memoised separately so the
-  // GraphView component can also call buildGraphData independently with
-  // the full notes array (it does its own internal filtering).
   const stats = useMemo(() => {
     const g = buildGraphData(notes);
     return g.stats;
@@ -75,13 +67,13 @@ export default function GraphPage() {
       initial="initial"
       animate="animate"
     >
-      {/* ── Header ───────────────────────────────────────────────────────────── */}
+      {}
       <motion.div
         variants={fadeUp}
         transition={fadeUpTransition}
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
       >
-        {/* Title + description */}
+        {}
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <GitBranch
@@ -112,7 +104,7 @@ export default function GraphPage() {
           </p>
         </div>
 
-        {/* Stat pills — stagger in after header */}
+        {}
         <motion.div
           variants={stagger}
           className="flex items-center gap-2 flex-wrap"
@@ -136,13 +128,12 @@ export default function GraphPage() {
         </motion.div>
       </motion.div>
 
-      {/* ── Graph canvas ─────────────────────────────────────────────────────── */}
+      {}
       <motion.div
         variants={staggerItem}
-        // On mobile the graph fills remaining viewport height;
-        // on md+ it uses a fixed comfortable height.
+        
         className="flex-1 min-h-0 md:flex-none"
-        style={{ height: undefined }} // let CSS below control it
+        style={{ height: undefined }} 
       >
         {visibleNotes.length === 0 ? (
           <EmptyState />
@@ -154,7 +145,7 @@ export default function GraphPage() {
         )}
       </motion.div>
 
-      {/* ── Legend / help row (desktop only) ─────────────────────────────────── */}
+      {}
       <motion.div
         variants={staggerItem}
         className="hidden md:flex items-center gap-6 px-1 pb-1"
@@ -189,8 +180,6 @@ export default function GraphPage() {
     </motion.div>
   );
 }
-
-// ── Empty state ───────────────────────────────────────────────────────────────
 
 function EmptyState() {
   return (
