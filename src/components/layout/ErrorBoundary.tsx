@@ -12,9 +12,9 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
   }
 
   componentDidCatch(error: Error) {
-    // Silently capture — no console noise in prod
+    
     if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
+      
       console.error("[ErrorBoundary]", error);
     }
   }
