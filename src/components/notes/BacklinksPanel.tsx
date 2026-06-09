@@ -1,24 +1,5 @@
 "use client";
 
-/**
- * BacklinksPanel.tsx  (upgraded)
- *
- * Obsidian-style backlinks sidebar panel for the note editor.
- *
- * Sections
- * ────────
- *  1. Backlinks   — notes that reference [[Current Title]] in their content.
- *     Each entry shows: title, folder name, subject dot, and a snippet of the
- *     sentence that contains the [[wikilink]].
- *
- *  2. Outgoing links — [[wikilinks]] this note points to.
- *     Each entry shows: title, subject dot, folder name.
- *
- * Both lists animate with staggerChildren from lib/animations.ts.
- * An elegant empty state is shown when there are no links at all.
- * Clicking any entry navigates to that note.
- */
-
 import { useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,8 +9,6 @@ import { subjectColor, formatRelative } from "@/lib/utils";
 import { stagger, staggerItem, easing } from "@/lib/animations";
 import type { Note, Folder } from "@/lib/types";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 interface Props {
   currentNoteId: string;
   currentTitle: string;
@@ -38,7 +17,7 @@ interface Props {
 interface BacklinkEntry {
   note:    Note;
   folder:  Folder | null;
-  snippet: string; // sentence containing [[Title]]
+  snippet: string; 
 }
 
 interface OutgoingEntry {
@@ -46,26 +25,16 @@ interface OutgoingEntry {
   folder: Folder | null;
 }
 
-// ── Snippet extractor ─────────────────────────────────────────────────────────
-
-/**
- * Find the sentence in `content` that contains `[[title]]` and return it
- * trimmed to ≤120 chars. Falls back to the first 120 chars of content.
- *
- * "Sentence" = text delimited by .  !  ?  or double newlines.
- * [[Brackets]] are stripped from the snippet so it reads as prose.
- */
 function extractSnippet(content: string, title: string): string {
   const escapedTitle = title.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
   const wikilinkRe   = new RegExp(`\\[\\[${escapedTitle}\\]\\]`, "i");
 
-  // Split on sentence-ending punctuation or paragraph breaks
   const sentences = content.split(/(?<=[.!?])\s+|\n{2,}/);
 
   for (const sentence of sentences) {
     if (wikilinkRe.test(sentence)) {
       const clean = sentence
-        .replace(/\[\[([^\]]+)\]\]/g, "$1") // [[X]] → X
+        .replace(/\[\[([^\]]+)\]\]/g, "$1") 
         .replace(/[#*`>_~]/g, "")            // strip markdown syntax
         .replace(/\s+/g, " ")
         .trim();
@@ -81,8 +50,6 @@ function extractSnippet(content: string, title: string): string {
     .trim();
   return fallback.length > 120 ? fallback.slice(0, 117) + "…" : fallback;
 }
-
-// ── Section header ────────────────────────────────────────────────────────────
 
 function SectionHeader({
   icon,
@@ -106,7 +73,7 @@ function SectionHeader({
       >
         {label}
       </span>
-      {/* Count badge */}
+      {}
       <span
         className="ml-auto text-[10px] font-semibold tabular-nums px-1.5 py-0.5 rounded-full"
         style={{
@@ -120,8 +87,6 @@ function SectionHeader({
     </div>
   );
 }
-
-// ── Backlink card ─────────────────────────────────────────────────────────────
 
 function BacklinkCard({ entry }: { entry: BacklinkEntry }) {
   const { note, folder, snippet } = entry;
@@ -147,7 +112,7 @@ function BacklinkCard({ entry }: { entry: BacklinkEntry }) {
           el.style.borderColor = "transparent";
         }}
       >
-        {/* Title row */}
+        {}
         <div className="flex items-center gap-1.5 mb-1 min-w-0">
           <span
             className="w-1.5 h-1.5 rounded-full shrink-0"
@@ -165,7 +130,7 @@ function BacklinkCard({ entry }: { entry: BacklinkEntry }) {
           />
         </div>
 
-        {/* Folder breadcrumb */}
+        {}
         {folder && (
           <div
             className="flex items-center gap-1 mb-1.5"
@@ -176,7 +141,7 @@ function BacklinkCard({ entry }: { entry: BacklinkEntry }) {
           </div>
         )}
 
-        {/* Sentence snippet containing the [[wikilink]] */}
+        {}
         {snippet && (
           <p
             className="text-[11px] leading-relaxed line-clamp-2"
@@ -186,7 +151,7 @@ function BacklinkCard({ entry }: { entry: BacklinkEntry }) {
           </p>
         )}
 
-        {/* Last updated */}
+        {}
         <div
           className="mt-1.5 text-[10px]"
           style={{ color: "var(--text-tertiary)" }}
@@ -197,8 +162,6 @@ function BacklinkCard({ entry }: { entry: BacklinkEntry }) {
     </motion.div>
   );
 }
-
-// ── Outgoing link row ─────────────────────────────────────────────────────────
 
 function OutgoingRow({ entry }: { entry: OutgoingEntry }) {
   const { note, folder } = entry;
@@ -253,8 +216,6 @@ function OutgoingRow({ entry }: { entry: OutgoingEntry }) {
   );
 }
 
-// ── Empty state ───────────────────────────────────────────────────────────────
-
 function EmptyState() {
   return (
     <motion.div
@@ -301,32 +262,26 @@ function EmptyState() {
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
 export function BacklinksPanel({ currentNoteId, currentTitle }: Props) {
-  // Raw arrays — never filter/map inside selectors (Zustand v5 best practice)
+  
   const allNotes   = useNotesStore((s) => s.notes);
   const allFolders = useNotesStore((s) => s.folders);
 
-  // O(1) folder lookup
   const folderMap = useMemo(
     () => new Map(allFolders.map((f) => [f.id, f])),
     [allFolders]
   );
 
-  // Escape the current note title once for all regex uses below
   const escapedTitle = useMemo(
     () => currentTitle.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&"),
     [currentTitle]
   );
 
-  // Compiled regex: matches [[Current Title]] case-insensitively
   const backlinkRe = useMemo(
     () => new RegExp(`\\[\\[${escapedTitle}\\]\\]`, "i"),
     [escapedTitle]
   );
 
-  // ── Backlinks: other notes that reference [[currentTitle]] ────────────────
   const backlinks = useMemo<BacklinkEntry[]>(() => {
     return allNotes
       .filter(
@@ -343,7 +298,6 @@ export function BacklinksPanel({ currentNoteId, currentTitle }: Props) {
       }));
   }, [allNotes, currentNoteId, backlinkRe, currentTitle, folderMap]);
 
-  // ── Outgoing links: [[wikilinks]] written in the current note ─────────────
   const currentNote = useMemo(
     () => allNotes.find((n) => n.id === currentNoteId),
     [allNotes, currentNoteId]
@@ -358,7 +312,7 @@ export function BacklinksPanel({ currentNoteId, currentTitle }: Props) {
     return matches
       .map((m) => m[1].trim().toLowerCase())
       .filter((lower) => {
-        if (seen.has(lower)) return false; // deduplicate repeated links
+        if (seen.has(lower)) return false; 
         seen.add(lower);
         return true;
       })
@@ -379,13 +333,12 @@ export function BacklinksPanel({ currentNoteId, currentTitle }: Props) {
 
   const hasLinks = backlinks.length > 0 || outgoing.length > 0;
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div
       className="card-v2 overflow-hidden"
       style={{ padding: 0 }}
     >
-      {/* Panel header with total links badge */}
+      {}
       <div
         className="flex items-center gap-2 px-3 py-2.5"
         style={{ borderBottom: "1px solid var(--border)" }}
@@ -414,7 +367,7 @@ export function BacklinksPanel({ currentNoteId, currentTitle }: Props) {
         )}
       </div>
 
-      {/* Scrollable body */}
+      {}
       <div className="px-2.5 py-2.5 space-y-4 overflow-y-auto no-scrollbar max-h-[70vh]">
         <AnimatePresence mode="wait">
           {!hasLinks ? (
@@ -426,7 +379,7 @@ export function BacklinksPanel({ currentNoteId, currentTitle }: Props) {
               animate="animate"
               className="space-y-4"
             >
-              {/* Backlinks */}
+              {}
               {backlinks.length > 0 && (
                 <section>
                   <SectionHeader
@@ -448,12 +401,12 @@ export function BacklinksPanel({ currentNoteId, currentTitle }: Props) {
                 </section>
               )}
 
-              {/* Divider */}
+              {}
               {backlinks.length > 0 && outgoing.length > 0 && (
                 <div style={{ borderTop: "1px solid var(--border)" }} />
               )}
 
-              {/* Outgoing links */}
+              {}
               {outgoing.length > 0 && (
                 <section>
                   <SectionHeader
