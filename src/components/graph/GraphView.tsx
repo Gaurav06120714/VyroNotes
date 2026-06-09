@@ -1,20 +1,5 @@
 "use client";
 
-/**
- * GraphView.tsx
- *
- * Obsidian-style interactive graph view for VyroNotes.
- *
- * Architecture:
- *  - react-force-graph-2d renders the canvas (WebGL-backed, handles 500+ nodes).
- *  - All graph data comes from buildGraphData() — pure function, memoized here.
- *  - Hover state drives per-node opacity/glow via nodeCanvasObject (custom draw).
- *  - Controls panel (search, orphan toggle, zoom buttons) overlaid in HTML.
- *  - Framer Motion wraps the outer shell for page-entry animation only;
- *    canvas internals are not animated to preserve performance.
- *  - Dynamic import with ssr:false — react-force-graph-2d uses browser APIs.
- */
-
 import dynamic from "next/dynamic";
 import React, {
   useRef,
@@ -40,14 +25,11 @@ import { cn } from "@/lib/utils";
 import { buildGraphData, type GraphNode } from "@/lib/buildGraphData";
 import type { Note } from "@/lib/types";
 
-// ── SSR-safe dynamic import ────────────────────────────────────────────────────
-// react-force-graph-2d accesses window/canvas on import — must be client-only.
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
   ssr: false,
   loading: () => <GraphSkeleton />,
 });
 
-// ── Design tokens (mirror globals.css CSS vars) ───────────────────────────────
 const COLORS = {
   bg:              "#08080c",
   surface:         "#101015",
@@ -65,18 +47,9 @@ const COLORS = {
   nodeDimOpacity:  0.18,
 } as const;
 
-// ── Internal force-graph types ────────────────────────────────────────────────
-// react-force-graph-2d's FCwithRef generic is tied to its own internal base
-// NodeObject shape. We use `any` for the ref and canvas callbacks, then cast
-// to GraphNode internally — this avoids a deeply-nested generic mismatch in
-// the library's overloaded component signature.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type FGRef = React.MutableRefObject<any>;
 
-// Alias for readability in internal cast sites only.
 type AnyNode = Record<string, unknown> & { x?: number; y?: number };
-
-// ── Sub-components ────────────────────────────────────────────────────────────
 
 function GraphSkeleton() {
   return (
@@ -127,7 +100,7 @@ function NodeTooltip({ node, position }: TooltipProps) {
           boxShadow: `0 8px 24px rgba(0,0,0,0.45), 0 0 0 1px ${COLORS.borderStrong}`,
         }}
       >
-        {/* Subject dot + title */}
+        {}
         <div className="flex items-center gap-1.5 mb-1">
           <span
             className="w-2 h-2 rounded-full shrink-0"
@@ -141,7 +114,7 @@ function NodeTooltip({ node, position }: TooltipProps) {
           </span>
         </div>
 
-        {/* Meta row */}
+        {}
         <div className="flex items-center gap-2 text-[10px]" style={{ color: COLORS.textTertiary }}>
           <span>{node.subject}</span>
           <span>·</span>
@@ -154,7 +127,7 @@ function NodeTooltip({ node, position }: TooltipProps) {
           )}
         </div>
 
-        {/* Orphan badge */}
+        {}
         {node.type === "orphan" && (
           <div
             className="mt-1.5 text-[10px] px-1.5 py-0.5 rounded-full inline-block"
@@ -170,8 +143,6 @@ function NodeTooltip({ node, position }: TooltipProps) {
     </AnimatePresence>
   );
 }
-
-// ── Stats badge ───────────────────────────────────────────────────────────────
 
 interface StatsProps {
   totalNodes: number;
@@ -239,12 +210,6 @@ function StatsBadge({ totalNodes, totalEdges, linkedCount, orphanCount, visible 
   );
 }
 
-// ── Canvas draw helpers ───────────────────────────────────────────────────────
-
-/**
- * Custom canvas painter for a single node.
- * Draws:  glow halo → filled circle → accent ring (if hovered/connected) → label
- */
 function paintNode(
   node:        AnyNode,
   ctx:         CanvasRenderingContext2D,
@@ -258,7 +223,6 @@ function paintNode(
   const y  = node.y ?? 0;
   const r  = gn.size ?? 5;
 
-  // ── Opacity logic ──────────────────────────────────────────────────────────
   let opacity = 1;
   if (hoveredId !== null) {
     if (gn.id === hoveredId || connectedIds.has(String(gn.id))) {
@@ -277,7 +241,6 @@ function paintNode(
   ctx.save();
   ctx.globalAlpha = opacity;
 
-  // ── Glow halo (only for hovered or connected) ──────────────────────────────
   if (isActive || isConn) {
     const glowRadius = r * (isActive ? 3.2 : 2.2);
     const grad = ctx.createRadialGradient(x, y, r * 0.5, x, y, glowRadius);
@@ -290,30 +253,27 @@ function paintNode(
     ctx.fill();
   }
 
-  // ── Node circle ────────────────────────────────────────────────────────────
   ctx.beginPath();
   ctx.arc(x, y, r, 0, 2 * Math.PI);
 
   if (isActive) {
-    // Solid accent fill when hovered
+    
     ctx.fillStyle = COLORS.accent;
     ctx.shadowColor = COLORS.accentGlow;
     ctx.shadowBlur  = 12;
   } else {
-    // Subject-coloured fill, slightly dimmed for non-hover
+    
     ctx.fillStyle = gn.color ?? COLORS.accent;
     ctx.shadowBlur = 0;
   }
   ctx.fill();
 
-  // ── Accent ring for connected nodes ───────────────────────────────────────
   if (isConn && !isActive) {
     ctx.strokeStyle = COLORS.accent;
     ctx.lineWidth   = 0.8;
     ctx.stroke();
   }
 
-  // ── Orphan dashed ring ─────────────────────────────────────────────────────
   if (gn.type === "orphan" && hoveredId === null && searchMatch.size === 0) {
     ctx.setLineDash([1.5, 2]);
     ctx.strokeStyle = "rgba(255,255,255,0.12)";
@@ -324,7 +284,6 @@ function paintNode(
 
   ctx.shadowBlur = 0;
 
-  // ── Label (only render when zoomed in enough, or when hovered/connected) ──
   const labelThreshold = 2.5;
   const showLabel = globalScale > labelThreshold || isActive || isConn;
 
@@ -341,24 +300,21 @@ function paintNode(
   ctx.restore();
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
 export interface GraphViewProps {
-  /** All notes from useNotesStore — component handles filtering internally. */
+  
   notes: Note[];
-  /** Container height in px. Defaults to full viewport minus a header offset. */
+  
   height?: number;
-  /** Extra className for the outer wrapper. */
+  
   className?: string;
 }
 
 export function GraphView({ notes, height, className }: GraphViewProps) {
   const router    = useRouter();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  
   const fgRef = useRef<any>(null) as FGRef;
   const wrapRef   = useRef<HTMLDivElement>(null);
 
-  // ── Dimensions — measure wrapper on mount + resize ─────────────────────────
   const [dims, setDims] = useState({ w: 800, h: height ?? 600 });
   useEffect(() => {
     if (!wrapRef.current) return;
@@ -370,7 +326,6 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
     return () => obs.disconnect();
   }, []);
 
-  // ── UI state ───────────────────────────────────────────────────────────────
   const [search,       setSearch]       = useState("");
   const [showOrphans,  setShowOrphans]  = useState(true);
   const [hoveredNode,  setHoveredNode]  = useState<string | null>(null);
@@ -379,11 +334,8 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
     position: { x: number; y: number };
   }>({ node: null, position: { x: 0, y: 0 } });
 
-  // ── Graph data — memoised; only rebuilds when notes array reference changes ─
   const graphData = useMemo(() => buildGraphData(notes), [notes]);
 
-  // ── Pre-compute adjacency set for the hovered node ────────────────────────
-  // Using a Map<nodeId, Set<connectedId>> would be O(1) lookup for 500+ nodes.
   const adjacencyMap = useMemo<Map<string, Set<string>>>(() => {
     const map = new Map<string, Set<string>>();
     for (const edge of graphData.edges) {
@@ -402,7 +354,6 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
     [hoveredNode, adjacencyMap]
   );
 
-  // ── Search match set ───────────────────────────────────────────────────────
   const searchMatch = useMemo<Set<string>>(() => {
     const q = search.trim().toLowerCase();
     if (!q) return new Set<string>();
@@ -413,8 +364,6 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
     );
   }, [search, graphData.nodes]);
 
-  // ── Filtered node/link data passed to force-graph ─────────────────────────
-  // force-graph uses `links` (not `edges`) and accepts plain objects.
   const fgData = useMemo(() => {
     const visibleNodes = graphData.nodes.filter((n) =>
       showOrphans ? true : n.type === "linked"
@@ -424,18 +373,15 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
       (e) => visibleIds.has(e.source) && visibleIds.has(e.target)
     );
     return {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      
       nodes: visibleNodes as any[],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      
       links: visibleLinks as any[],
     };
   }, [graphData, showOrphans]);
 
-  // ── Count of currently visible nodes (for stats badge) ────────────────────
   const visibleCount = fgData.nodes.length;
 
-  // ── Node canvas painter — stable callback, reads refs via closure ──────────
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nodeCanvasObject = useCallback(
     (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
       paintNode(node as AnyNode, ctx, globalScale, hoveredNode, connectedIds, searchMatch);
@@ -443,12 +389,10 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
     [hoveredNode, connectedIds, searchMatch]
   );
 
-  // Pointer area — use same radius so click hit-box matches visual size
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nodePointerAreaPaint = useCallback(
     (node: any, color: string, ctx: CanvasRenderingContext2D) => {
       const gn = node as AnyNode & GraphNode;
-      const r  = (gn.size ?? 5) + 3; // slightly larger for easier clicking
+      const r  = (gn.size ?? 5) + 3; 
       ctx.beginPath();
       ctx.arc(gn.x ?? 0, gn.y ?? 0, r, 0, 2 * Math.PI);
       ctx.fillStyle = color;
@@ -457,8 +401,6 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
     []
   );
 
-  // ── Link colour ────────────────────────────────────────────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const linkColor = useCallback(
     (link: any) => {
       if (hoveredNode === null && searchMatch.size === 0) return COLORS.linkDefault;
@@ -473,7 +415,6 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
     [hoveredNode, searchMatch]
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const linkWidth = useCallback(
     (link: any) => {
       const s = typeof link.source === "object" ? link.source?.id : link.source;
@@ -484,8 +425,6 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
     [hoveredNode]
   );
 
-  // ── Event handlers ─────────────────────────────────────────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleNodeClick = useCallback(
     (node: any) => {
       router.push(`/notes/${(node as GraphNode).id}`);
@@ -493,7 +432,6 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
     [router]
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleNodeHover = useCallback(
     (node: any) => {
       setHoveredNode(node ? String((node as GraphNode).id) : null);
@@ -501,7 +439,6 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
     []
   );
 
-  // Mouse-move on the canvas wrapper to position HTML tooltip
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     setTooltip((prev) => ({
       ...prev,
@@ -509,7 +446,6 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
     }));
   }, []);
 
-  // Sync tooltip node with hovered node
   useEffect(() => {
     if (!hoveredNode) {
       setTooltip((prev) => ({ ...prev, node: null }));
@@ -519,13 +455,11 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
     setTooltip((prev) => ({ ...prev, node: found }));
   }, [hoveredNode, graphData.nodes]);
 
-  // Change cursor on hover
   useEffect(() => {
     if (!wrapRef.current) return;
     wrapRef.current.style.cursor = hoveredNode ? "pointer" : "grab";
   }, [hoveredNode]);
 
-  // ── Zoom controls ──────────────────────────────────────────────────────────
   const zoomIn  = useCallback(() => {
     if (!fgRef.current) return;
     const current = (fgRef.current.zoom as () => number)();
@@ -542,12 +476,10 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
     fgRef.current?.zoomToFit(400, 40);
   }, []);
 
-  // Auto-fit on first render after engine settles
   const handleEngineStop = useCallback(() => {
     fgRef.current?.zoomToFit(600, 50);
   }, []);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
@@ -562,30 +494,30 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
       ref={wrapRef}
       onMouseMove={handleMouseMove}
     >
-      {/* ── Force graph canvas ─────────────────────────────────────────────── */}
+      {}
       <ForceGraph2D
         ref={fgRef}
         graphData={fgData}
         width={dims.w}
         height={height ?? dims.h}
         backgroundColor={COLORS.bg}
-        // Node rendering
+        
         nodeCanvasObject={nodeCanvasObject}
         nodeCanvasObjectMode={() => "replace"}
         nodePointerAreaPaint={nodePointerAreaPaint}
-        nodeLabel={() => ""} /* disable built-in tooltip — we use our own */
+        nodeLabel={() => ""} 
         nodeVal={(node: any) => (node as GraphNode).size ?? 5}
-        // Link rendering
+        
         linkColor={linkColor}
         linkWidth={linkWidth}
         linkCurvature={0.15}
-        // Interaction
+        
         onNodeClick={handleNodeClick}
         onNodeHover={handleNodeHover}
-        // Simulation
+        
         cooldownTicks={120}
         onEngineStop={handleEngineStop}
-        // Performance
+        
         enableNodeDrag
         enableZoomInteraction
         enablePanInteraction
@@ -595,13 +527,13 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
         d3VelocityDecay={0.35}
       />
 
-      {/* ── HTML tooltip (positioned fixed so it escapes canvas) ───────────── */}
+      {}
       <NodeTooltip node={tooltip.node} position={tooltip.position} />
 
-      {/* ── Controls overlay ──────────────────────────────────────────────── */}
+      {}
       <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2 pointer-events-none">
 
-        {/* Search bar */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -638,7 +570,7 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
               </button>
             )}
           </div>
-          {/* Match count hint */}
+          {}
           <AnimatePresence>
             {search && (
               <motion.div
@@ -654,14 +586,14 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
           </AnimatePresence>
         </motion.div>
 
-        {/* Right-side controls */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.25 }}
           className="pointer-events-auto flex items-center gap-1.5"
         >
-          {/* Stats badge */}
+          {}
           <StatsBadge
             totalNodes={graphData.stats.totalNodes}
             totalEdges={graphData.stats.totalEdges}
@@ -670,7 +602,7 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
             visible={visibleCount}
           />
 
-          {/* Orphan toggle */}
+          {}
           <button
             onClick={() => setShowOrphans((v) => !v)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] transition-colors focus-ring"
@@ -689,7 +621,7 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
         </motion.div>
       </div>
 
-      {/* ── Zoom controls (bottom-right) ───────────────────────────────────── */}
+      {}
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
@@ -730,7 +662,7 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
         ))}
       </motion.div>
 
-      {/* ── Legend (bottom-left) ───────────────────────────────────────────── */}
+      {}
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
@@ -753,7 +685,7 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
         </div>
       </motion.div>
 
-      {/* ── Empty state ────────────────────────────────────────────────────── */}
+      {}
       <AnimatePresence>
         {visibleCount === 0 && (
           <motion.div
@@ -781,8 +713,6 @@ export function GraphView({ notes, height, className }: GraphViewProps) {
     </motion.div>
   );
 }
-
-// ── Tiny helpers ──────────────────────────────────────────────────────────────
 
 function LegendDot({
   color,
