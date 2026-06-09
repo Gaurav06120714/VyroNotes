@@ -27,7 +27,7 @@ const FEATURES = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen text-text-primary overflow-x-hidden">
-      {/* Nav */}
+      {}
       <nav className="sticky top-0 z-30 bg-[var(--bg-surface)] border-b border-app h-16 flex items-center justify-between px-6 md:px-10">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-[var(--accent)] flex items-center justify-center">
@@ -46,7 +46,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero */}
+      {}
       <section className="relative max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
         <h1 className="text-[44px] md:text-[68px] font-bold tracking-[-0.025em] leading-[1.05] mb-6">
           One place for<br />
@@ -67,19 +67,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Dashboard proof section */}
+      {}
       <section id="stats" className="relative max-w-5xl mx-auto px-6 py-20">
         <div className="card-v2 overflow-hidden" style={{ padding: 0 }}>
-          {/* Browser bar */}
+          {}
           <div className="flex items-center gap-2 px-4 h-9 border-b border-app bg-[var(--bg-elevated)]">
             <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]/60" />
             <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]/60" />
             <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]/60" />
             <span className="flex-1 text-center text-[11px] text-text-tertiary">vyronotes.app/dashboard</span>
           </div>
-          {/* Dashboard content */}
+          {}
           <div className="p-5">
-            {/* Top row: stat cards */}
+            {}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
               {[
                 { label: 'Notes', value: '127', delta: '+3 today' },
@@ -94,9 +94,9 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
-            {/* Bottom row: recent note + upcoming */}
+            {}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Recent note */}
+              {}
               <div className="stat-card">
                 <div className="text-[11px] text-text-tertiary mb-2">Last edited note</div>
                 <div className="text-[13px] font-semibold text-text-primary mb-1">Chapter 9 — Cellular Respiration</div>
@@ -109,7 +109,7 @@ export default function LandingPage() {
                   ))}
                 </div>
               </div>
-              {/* Upcoming */}
+              {}
               <div className="stat-card">
                 <div className="text-[11px] text-text-tertiary mb-2">Coming up</div>
                 <div className="space-y-2">
@@ -131,7 +131,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features */}
+      {}
       <section id="features" className="relative max-w-6xl mx-auto px-6 py-20">
         <div className="text-center mb-14">
           <div className="text-[11px] uppercase tracking-[0.12em] text-accent mb-3 font-semibold">What&apos;s included</div>
@@ -154,7 +154,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA */}
+      {}
       <section id="cta" className="relative max-w-4xl mx-auto px-6 py-24 text-center">
         <div className="card-v2" style={{ padding: 48, borderRadius: 20 }}>
           <h2 className="text-[32px] md:text-[40px] font-bold tracking-[-0.02em] mb-3">Give it a try — it&apos;s free.</h2>
@@ -165,7 +165,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
+      {}
       <footer className="border-t border-app py-10 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-[13px] text-text-tertiary">
           <div className="flex items-center gap-2">
