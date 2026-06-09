@@ -1,20 +1,5 @@
 "use client";
 
-/**
- * Canvas page  —  /canvas
- *
- * Hosts the CanvasBoard with a floating toolbar.
- * The board takes up the full remaining viewport height.
- *
- * Toolbar actions:
- *   Add Note     — opens note-picker modal inside the board
- *   Add Concept  — drops a coloured concept node
- *   Add Text     — drops a minimal text label node
- *   ─────────
- *   Export PNG   — renders the current viewport to a PNG download
- *   Clear Canvas — removes all nodes & edges
- */
-
 import { useRef, useState } from "react";
 import { motion }           from "framer-motion";
 import {
@@ -31,8 +16,6 @@ import { CanvasBoardRef, type CanvasBoardHandle } from "@/components/canvas/Canv
 import { useCanvasStore } from "@/store/canvas.store";
 import { fadeUp, fadeUpTransition } from "@/lib/animations";
 import { cn } from "@/lib/utils";
-
-// ── Toolbar button ─────────────────────────────────────────────────────────────
 
 function ToolBtn({
   icon,
@@ -75,8 +58,6 @@ function ToolBtn({
   );
 }
 
-// ── Page ───────────────────────────────────────────────────────────────────────
-
 export default function CanvasPage() {
   const boardRef    = useRef<CanvasBoardHandle>(null);
   const nodeCount   = useCanvasStore((s) => s.nodes.length);
@@ -92,7 +73,7 @@ export default function CanvasPage() {
 
   return (
     <div className="relative flex flex-col h-full -mt-1 gap-0">
-      {/* ── Page header ─────────────────────────────────────────────────────── */}
+      {}
       <motion.div
         variants={fadeUp}
         initial="initial"
@@ -115,7 +96,7 @@ export default function CanvasPage() {
           </div>
         </div>
 
-        {/* Info hint toggle */}
+        {}
         <button
           onClick={() => setShowHint((h) => !h)}
           className="p-1.5 rounded-md hover:bg-bg-elevated transition-colors"
@@ -126,7 +107,7 @@ export default function CanvasPage() {
         </button>
       </motion.div>
 
-      {/* Hint bar */}
+      {}
       {showHint && (
         <motion.div
           initial={{ opacity: 0, y: -4 }}
@@ -161,7 +142,7 @@ export default function CanvasPage() {
         </motion.div>
       )}
 
-      {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
+      {}
       <div
         className="flex items-center gap-1 px-2 py-1.5 rounded-xl mb-2 shrink-0 overflow-x-auto no-scrollbar"
         style={{
@@ -169,7 +150,7 @@ export default function CanvasPage() {
           border:     "1px solid var(--border)",
         }}
       >
-        {/* Add nodes */}
+        {}
         <ToolBtn
           icon={<StickyNote className="w-3.5 h-3.5" />}
           label="Add Note"
@@ -187,18 +168,18 @@ export default function CanvasPage() {
           onClick={() => boardRef.current?.addTextNode()}
         />
 
-        {/* Spacer */}
+        {}
         <div className="flex-1" />
         <div className="w-px h-5 shrink-0" style={{ background: "var(--border)" }} />
 
-        {/* Viewport */}
+        {}
         <ToolBtn
           icon={<RotateCcw className="w-3.5 h-3.5" />}
           label="Reset view"
           onClick={() => boardRef.current?.resetViewport()}
         />
 
-        {/* Export */}
+        {}
         <ToolBtn
           icon={<Download className="w-3.5 h-3.5" />}
           label="Export PNG"
@@ -206,7 +187,7 @@ export default function CanvasPage() {
           disabled={nodeCount === 0}
         />
 
-        {/* Clear */}
+        {}
         <ToolBtn
           icon={<Trash2 className="w-3.5 h-3.5" />}
           label="Clear"
@@ -216,7 +197,7 @@ export default function CanvasPage() {
         />
       </div>
 
-      {/* ── Canvas board (fills remaining height) ─────────────────────────── */}
+      {}
       <div
         className="flex-1 min-h-0 rounded-xl overflow-hidden"
         style={{
@@ -227,7 +208,7 @@ export default function CanvasPage() {
         <CanvasBoardRef ref={boardRef} />
       </div>
 
-      {/* Empty-state overlay (shown over the board when no nodes exist) */}
+      {}
       {nodeCount === 0 && (
         <motion.div
           initial={{ opacity: 0 }}
