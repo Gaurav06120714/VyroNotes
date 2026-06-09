@@ -15,17 +15,16 @@ interface ChatState {
   messages: ChatMessage[];
   context: ChatContext;
   streaming: boolean;
-  /** Send a user message and stream the AI response. */
+  
   send: (content: string, page?: string) => Promise<void>;
-  /** Append a token to the last assistant message (used during streaming). */
+  
   appendToken: (token: string) => void;
   setContext: (ctx: Partial<ChatContext>) => void;
   clear: () => void;
-  /** Abort controller ref stored outside Zustand to avoid serialization issues. */
+  
   _abortController: AbortController | null;
 }
 
-/** Build a brief system prompt based on the current page. */
 function buildSystemPrompt(page: string): string {
   const base =
     "You are an AI study buddy embedded in VyroNotes, a student note-taking app. " +
@@ -76,7 +75,6 @@ export const useChatStore = create<ChatState>()(
       send: async (content: string, page?: string) => {
         const { messages, context, appendToken } = get();
 
-        // Abort any in-flight request
         get()._abortController?.abort();
         const controller = new AbortController();
         set({ _abortController: controller });
@@ -98,7 +96,6 @@ export const useChatStore = create<ChatState>()(
 
         set({ messages: [...messages, userMsg, aiMsg], context: ctx, streaming: true });
 
-        // Build messages array for Ollama (last 20 turns for context window)
         const systemMsg: OllamaMessage = {
           role: "system",
           content: buildSystemPrompt(ctx.currentPage),
@@ -142,7 +139,7 @@ export const useChatStore = create<ChatState>()(
           }
         } catch (err) {
           if (err instanceof Error && err.name === "AbortError") {
-            // User cancelled — leave partial response as-is
+            
           } else {
             set((s) => {
               const msgs = [...s.messages];
