@@ -1,7 +1,6 @@
-// Reusable Framer Motion variants — keep transitions consistent across app.
 import type { Variants, Transition } from "framer-motion";
 
-export const easing: number[] = [0.22, 1, 0.36, 1]; // gentle ease-out
+export const easing: number[] = [0.22, 1, 0.36, 1]; 
 
 export const fadeUp: Variants = {
   initial: { opacity: 0, y: 12 },
