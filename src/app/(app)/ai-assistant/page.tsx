@@ -47,7 +47,7 @@ export default function AIAssistantPage() {
 
   return (
     <div className="max-w-3xl mx-auto h-[calc(100vh-160px)] flex flex-col">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-md bg-[var(--accent)] flex items-center justify-center">
@@ -69,7 +69,7 @@ export default function AIAssistantPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Model selector */}
+          {}
           <select
             value={model}
             onChange={(e) => setModel(e.target.value)}
@@ -98,7 +98,7 @@ export default function AIAssistantPage() {
         </div>
       </div>
 
-      {/* Messages */}
+      {}
       <div ref={scrollRef} className="flex-1 card-v2 overflow-y-auto space-y-4 p-4">
         {messages.map((m, idx) => {
           const isStreamingLast =
@@ -144,7 +144,7 @@ export default function AIAssistantPage() {
         })}
       </div>
 
-      {/* Quick prompts */}
+      {}
       {messages.length <= 2 && !streaming && (
         <div className="flex flex-wrap gap-2 mt-3">
           {QUICK_PROMPTS.map((p) => (
@@ -159,7 +159,7 @@ export default function AIAssistantPage() {
         </div>
       )}
 
-      {/* Input bar */}
+      {}
       <div className="mt-3 flex items-center gap-2">
         <input
           value={input}
