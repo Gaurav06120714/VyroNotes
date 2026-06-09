@@ -5,6 +5,8 @@ import { Note, Folder } from "@/lib/types";
 import { DUMMY_NOTES, DUMMY_FOLDERS, TAGS } from "@/lib/dummy-data";
 import { uid } from "@/lib/utils";
 
+export type SyncStatus = "idle" | "syncing" | "synced" | "error";
+
 interface NotesState {
   notes: Note[];
   folders: Folder[];
@@ -12,10 +14,12 @@ interface NotesState {
   selectedFolderId: string | null;
   selectedTag: string | null;
   search: string;
+  syncStatus: SyncStatus;
 
   setSelectedFolder: (id: string | null) => void;
   setSelectedTag: (t: string | null) => void;
   setSearch: (q: string) => void;
+  setSyncStatus: (s: SyncStatus) => void;
 
   createNote: (partial?: Partial<Note>) => Note;
   updateNote: (id: string, patch: Partial<Note>) => void;
@@ -28,14 +32,60 @@ interface NotesState {
   createFolder: (name: string, parentId?: string | null) => void;
   deleteFolder: (id: string) => void;
 
-  /** Returns the daily-note title string for a given date, e.g. "Daily Note — May 29, 2026" */
+  hydrateFromCloud: (notes: Note[], folders: Folder[]) => void;
+
   getDailyTitle: (date: Date) => string;
-  /**
-   * Finds the daily note for `date`.  If it doesn't exist it is created,
-   * including auto-creating the "Daily Notes" folder when absent.
-   * Returns the existing or new Note.
-   */
+  
   getDailyNote: (date: Date) => Note;
+}
+
+async function getRawSupabase(): Promise<any> {
+  const { getSupabaseClient } = await import("@/lib/supabase/client");
+  return getSupabaseClient();
+}
+
+async function upsertNoteToSupabase(note: Note, userId: string) {
+  const { hasSupabase } = await import("@/store/auth.store");
+  if (!hasSupabase) return;
+  try {
+    const supabase = await getRawSupabase();
+    await supabase.from("notes").upsert({
+      id: note.id,
+      user_id: userId,
+      title: note.title,
+      content: note.content,
+      subject: note.subject,
+      tags: note.tags,
+      folder_id: note.folderId ?? null,
+      is_pinned: note.pinned,
+      is_archived: note.archived,
+      is_trashed: note.trashed,
+      word_count: note.content.split(/\s+/).filter(Boolean).length,
+      updated_at: note.updatedAt,
+      created_at: note.createdAt,
+    }, { onConflict: "id" });
+  } catch {
+    
+  }
+}
+
+async function deleteNoteFromSupabase(noteId: string) {
+  const { hasSupabase } = await import("@/store/auth.store");
+  if (!hasSupabase) return;
+  try {
+    const supabase = await getRawSupabase();
+    await supabase.from("notes").delete().eq("id", noteId);
+  } catch {
+    
+  }
+}
+
+async function getCurrentUserId(): Promise<string | null> {
+  const { hasSupabase } = await import("@/store/auth.store");
+  if (!hasSupabase) return null;
+  const { getSupabaseClient } = await import("@/lib/supabase/client");
+  const { data } = await getSupabaseClient().auth.getSession();
+  return data.session?.user.id ?? null;
 }
 
 export const useNotesStore = create<NotesState>()(
@@ -47,10 +97,14 @@ export const useNotesStore = create<NotesState>()(
       selectedFolderId: null,
       selectedTag: null,
       search: "",
+      syncStatus: "idle" as SyncStatus,
 
       setSelectedFolder: (id) => set({ selectedFolderId: id }),
       setSelectedTag: (t) => set({ selectedTag: t }),
       setSearch: (q) => set({ search: q }),
+      setSyncStatus: (s) => set({ syncStatus: s }),
+
+      hydrateFromCloud: (notes, folders) => set({ notes, folders }),
 
       createNote: (partial) => {
         const note: Note = {
@@ -68,31 +122,58 @@ export const useNotesStore = create<NotesState>()(
           updatedAt: new Date().toISOString(),
         };
         set((s) => ({ notes: [note, ...s.notes] }));
+        
+        getCurrentUserId().then((uid) => { if (uid) upsertNoteToSupabase(note, uid); });
         return note;
       },
-      updateNote: (id, patch) =>
+      updateNote: (id, patch) => {
         set((s) => ({
           notes: s.notes.map((n) =>
             n.id === id ? { ...n, ...patch, updatedAt: new Date().toISOString() } : n
           ),
-        })),
-      deleteNote: (id) =>
+        }));
+        
+        const updated = get().notes.find((n) => n.id === id);
+        if (updated) {
+          getCurrentUserId().then((uid) => { if (uid) upsertNoteToSupabase(updated, uid); });
+        }
+      },
+      deleteNote: (id) => {
         set((s) => ({
           notes: s.notes.map((n) => (n.id === id ? { ...n, trashed: true } : n)),
-        })),
-      restoreNote: (id) =>
+        }));
+        const trashed = get().notes.find((n) => n.id === id);
+        if (trashed) {
+          getCurrentUserId().then((uid) => { if (uid) upsertNoteToSupabase({ ...trashed, trashed: true }, uid); });
+        }
+      },
+      restoreNote: (id) => {
         set((s) => ({
           notes: s.notes.map((n) => (n.id === id ? { ...n, trashed: false } : n)),
-        })),
-      hardDelete: (id) => set((s) => ({ notes: s.notes.filter((n) => n.id !== id) })),
-      togglePin: (id) =>
+        }));
+        const restored = get().notes.find((n) => n.id === id);
+        if (restored) {
+          getCurrentUserId().then((uid) => { if (uid) upsertNoteToSupabase({ ...restored, trashed: false }, uid); });
+        }
+      },
+      hardDelete: (id) => {
+        set((s) => ({ notes: s.notes.filter((n) => n.id !== id) }));
+        deleteNoteFromSupabase(id);
+      },
+      togglePin: (id) => {
         set((s) => ({
           notes: s.notes.map((n) => (n.id === id ? { ...n, pinned: !n.pinned } : n)),
-        })),
-      toggleArchive: (id) =>
+        }));
+        const note = get().notes.find((n) => n.id === id);
+        if (note) getCurrentUserId().then((uid) => { if (uid) upsertNoteToSupabase(note, uid); });
+      },
+      toggleArchive: (id) => {
         set((s) => ({
           notes: s.notes.map((n) => (n.id === id ? { ...n, archived: !n.archived } : n)),
-        })),
+        }));
+        const note = get().notes.find((n) => n.id === id);
+        if (note) getCurrentUserId().then((uid) => { if (uid) upsertNoteToSupabase(note, uid); });
+      },
 
       createFolder: (name, parentId = null) =>
         set((s) => ({
@@ -105,7 +186,7 @@ export const useNotesStore = create<NotesState>()(
         set((s) => ({ folders: s.folders.filter((f) => f.id !== id) })),
 
       getDailyTitle: (date: Date) => {
-        // Format: "Daily Note — May 29, 2026"
+        
         const month = date.toLocaleString("en-US", { month: "long" });
         const day   = date.getDate();
         const year  = date.getFullYear();
@@ -116,13 +197,11 @@ export const useNotesStore = create<NotesState>()(
         const { notes, folders, getDailyTitle, createNote } = get();
         const title = getDailyTitle(date);
 
-        // 1. Return existing (non-trashed) daily note for this date
         const existing = notes.find(
           (n) => n.title === title && !n.trashed
         );
         if (existing) return existing;
 
-        // 2. Ensure "Daily Notes" folder exists
         const FOLDER_NAME = "Daily Notes";
         let folder = folders.find((f) => f.name === FOLDER_NAME);
         if (!folder) {
@@ -131,7 +210,6 @@ export const useNotesStore = create<NotesState>()(
           set((s) => ({ folders: [...s.folders, folder!] }));
         }
 
-        // 3. Build prefilled template
         const dateLabel = date.toLocaleString("en-US", {
           weekday: "long",
           month:   "long",
@@ -165,16 +243,14 @@ export const useNotesStore = create<NotesState>()(
           ``,
         ].join("\n");
 
-        // 4. Create and return
         const newNote = createNote({
           title,
           content,
-          subject:  "CS",          // sensible default; user can change
+          subject:  "CS",          
           tags:     ["daily"],
           folderId: folder.id,
         });
 
-        // Also register "daily" tag if it isn't there yet
         set((s) => ({
           tags: s.tags.includes("daily") ? s.tags : [...s.tags, "daily"],
         }));
