@@ -100,7 +100,7 @@ const EXPLANATIONS = [
 ];
 
 function QuizPlay({ quiz, onClose }: { quiz: Quiz; onClose: (score?: number) => void }) {
-  // Adaptive: if user gets 3 right in a row, prefer harder questions next
+  
   const [streak, setStreak] = useState(0);
   const orderedQuestions = useMemo(() => quiz.questions, [quiz]);
   const [idx, setIdx] = useState(0);
@@ -120,7 +120,7 @@ function QuizPlay({ quiz, onClose }: { quiz: Quiz; onClose: (score?: number) => 
     }
     const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [timeLeft, showFeedback, done]);
 
   function handleSelect(i: number) {
@@ -132,7 +132,7 @@ function QuizPlay({ quiz, onClose }: { quiz: Quiz; onClose: (score?: number) => 
       setStreak((s) => s + 1);
     } else {
       setStreak(0);
-      // Auto-show explanation on wrong answer
+      
       setTimeout(() => setShowExplanation(true), 350);
     }
   }
@@ -172,7 +172,7 @@ function QuizPlay({ quiz, onClose }: { quiz: Quiz; onClose: (score?: number) => 
           />
         ) : (
           <div>
-            {/* Header */}
+            {}
             <div className="flex items-center justify-between mb-4 text-[13px]">
               <div className="flex items-center gap-2">
                 <span className="font-medium text-text-primary">{quiz.title}</span>
@@ -194,7 +194,7 @@ function QuizPlay({ quiz, onClose }: { quiz: Quiz; onClose: (score?: number) => 
               </button>
             </div>
 
-            {/* Progress */}
+            {}
             <div className="h-1 bg-[var(--bg-elevated)] rounded-full mb-2 overflow-hidden">
               <motion.div
                 className="h-full bg-accent"
@@ -207,7 +207,7 @@ function QuizPlay({ quiz, onClose }: { quiz: Quiz; onClose: (score?: number) => 
               <Clock className="w-3 h-3" /> {timeLeft}s
             </div>
 
-            {/* Question card */}
+            {}
             <div className="card-v2 mb-4" style={{ padding: 24 }}>
               <div className="text-[18px] font-semibold mb-6 leading-relaxed">{q.question}</div>
               <div className="space-y-2">
@@ -236,7 +236,7 @@ function QuizPlay({ quiz, onClose }: { quiz: Quiz; onClose: (score?: number) => 
               </div>
             </div>
 
-            {/* AI Explanation panel */}
+            {}
             <AnimatePresence>
               {showExplanation && (
                 <motion.div
