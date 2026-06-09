@@ -34,7 +34,7 @@ export function FloatingAssistant() {
 
   return (
     <>
-      {/* Floating bubble */}
+      {}
       <AnimatePresence>
         {!aiOpen && (
           <motion.button
@@ -51,7 +51,7 @@ export function FloatingAssistant() {
         )}
       </AnimatePresence>
 
-      {/* Mini chat */}
+      {}
       <AnimatePresence>
         {aiOpen && (
           <motion.div
@@ -63,7 +63,7 @@ export function FloatingAssistant() {
             role="dialog"
             aria-label="AI Study Buddy chat"
           >
-            {/* Header */}
+            {}
             <div className="flex items-center gap-2 px-4 h-14 border-b border-app shrink-0">
               <div className="w-8 h-8 rounded-md bg-[var(--accent)] flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
@@ -102,7 +102,7 @@ export function FloatingAssistant() {
               </button>
             </div>
 
-            {/* Messages */}
+            {}
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
               {messages.map((m, idx) => {
                 const isLastAssistant =
@@ -136,7 +136,7 @@ export function FloatingAssistant() {
               })}
             </div>
 
-            {/* Quick prompts */}
+            {}
             {showSuggestions && !streaming && (
               <div className="px-4 pb-2 flex flex-wrap gap-1.5">
                 {(contextualPrompts.length ? contextualPrompts : QUICK_PROMPTS).slice(0, 3).map((p) => (
@@ -151,7 +151,7 @@ export function FloatingAssistant() {
               </div>
             )}
 
-            {/* Input bar */}
+            {}
             <div className="p-3 border-t border-app shrink-0">
               <div className="flex items-center gap-2">
                 <input
