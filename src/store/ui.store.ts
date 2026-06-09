@@ -5,7 +5,7 @@ interface UIState {
   commandOpen: boolean;
   aiOpen: boolean;
   sidebarOpen: boolean;
-  sidebarDrawerOpen: boolean; // mobile slide-in drawer
+  sidebarDrawerOpen: boolean; 
   shortcutsOpen: boolean;
   quickCaptureOpen: boolean;
   setCommandOpen: (v: boolean) => void;
