@@ -1,19 +1,5 @@
 "use client";
 
-/**
- * PropertiesPanel.tsx
- *
- * Obsidian-inspired Properties Panel that slides in from the right of the
- * note editor. Displays & allows editing of:
- *  - Created / Updated dates
- *  - Word count & reading time (live from content)
- *  - Subject (read-only, shown for reference)
- *  - Folder (editable dropdown)
- *  - Tags (add / remove inline)
- *  - Linked notes count (backlinks + outgoing)
- *  - Note ID with copy-to-clipboard
- */
-
 import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -35,11 +21,9 @@ import { useNotesStore } from "@/store/notes.store";
 import { wordCount, readingTime, subjectColor } from "@/lib/utils";
 import type { Note, Folder } from "@/lib/types";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 interface Props {
   note:        Note;
-  content:     string;      // live content from editor state
+  content:     string;      
   tags:        string[];
   setTags:     (t: string[]) => void;
   allTags:     string[];
@@ -47,16 +31,12 @@ interface Props {
   updateNote:  (id: string, data: Partial<Note>) => void;
 }
 
-// ── Animation ─────────────────────────────────────────────────────────────────
-
 const slideFromRight = {
   initial:  { x: "100%", opacity: 0 },
   animate:  { x: 0,       opacity: 1 },
   exit:     { x: "100%",  opacity: 0 },
   transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const },
 };
-
-// ── Row wrapper ───────────────────────────────────────────────────────────────
 
 function Row({
   icon,
@@ -89,8 +69,6 @@ function Row({
     </div>
   );
 }
-
-// ── Copy-to-clipboard button ──────────────────────────────────────────────────
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -136,8 +114,6 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
 export function PropertiesPanel({
   note,
   content,
@@ -149,17 +125,14 @@ export function PropertiesPanel({
 }: Props) {
   const allNotes = useNotesStore((s) => s.notes);
 
-  // Live stats
   const words   = useMemo(() => wordCount(content), [content]);
   const minutes = useMemo(() => readingTime(content), [content]);
 
-  // Linked-notes count (backlinks + outgoing deduplicated by id)
   const linkedCount = useMemo(() => {
     const WIKILINK_RE = /\[\[(.+?)\]\]/g;
     const titleLower  = note.title.toLowerCase();
     const linkedIds   = new Set<string>();
 
-    // Backlinks: other notes that contain [[note.title]]
     for (const n of allNotes) {
       if (n.id === note.id || n.trashed || n.archived) continue;
       if (n.content.toLowerCase().includes(`[[${titleLower}]]`)) {
@@ -167,7 +140,6 @@ export function PropertiesPanel({
       }
     }
 
-    // Outgoing: [[wikilinks]] in this note that resolve to existing notes
     const titleMap = new Map(
       allNotes
         .filter((n) => !n.trashed && !n.archived)
@@ -183,7 +155,6 @@ export function PropertiesPanel({
     return linkedIds.size;
   }, [allNotes, note.id, note.title, content]);
 
-  // Tag editing
   const [newTag, setNewTag]     = useState("");
   const [tagFocus, setTagFocus] = useState(false);
 
@@ -218,7 +189,7 @@ export function PropertiesPanel({
         border:     "1px solid var(--border)",
       }}
     >
-      {/* Panel header */}
+      {}
       <div
         className="flex items-center gap-2 px-3 py-2.5 sticky top-0"
         style={{
@@ -234,28 +205,28 @@ export function PropertiesPanel({
       </div>
 
       <div className="px-3 pb-3">
-        {/* Created */}
+        {}
         <Row icon={<Calendar className="w-3.5 h-3.5" />} label="Created">
           <span style={{ color: "var(--text-secondary)" }}>
             {format(new Date(note.createdAt), "MMM d, yyyy 'at' h:mm a")}
           </span>
         </Row>
 
-        {/* Updated */}
+        {}
         <Row icon={<Clock className="w-3.5 h-3.5" />} label="Updated">
           <span style={{ color: "var(--text-secondary)" }}>
             {format(new Date(note.updatedAt), "MMM d, yyyy 'at' h:mm a")}
           </span>
         </Row>
 
-        {/* Word count + reading time */}
+        {}
         <Row icon={<BookOpen className="w-3.5 h-3.5" />} label="Stats">
           <span style={{ color: "var(--text-secondary)" }}>
             {words} words · {minutes} min read
           </span>
         </Row>
 
-        {/* Subject */}
+        {}
         <Row icon={<FileText className="w-3.5 h-3.5" />} label="Subject">
           <span className="flex items-center gap-1.5">
             <span
@@ -266,7 +237,7 @@ export function PropertiesPanel({
           </span>
         </Row>
 
-        {/* Folder */}
+        {}
         <Row icon={<FolderOpen className="w-3.5 h-3.5" />} label="Folder">
           <select
             value={note.folderId || ""}
@@ -287,7 +258,7 @@ export function PropertiesPanel({
           </select>
         </Row>
 
-        {/* Tags */}
+        {}
         <Row icon={<Hash className="w-3.5 h-3.5" />} label="Tags">
           <div className="flex flex-wrap gap-1 mb-1.5">
             {tags.map((t) => (
@@ -311,7 +282,7 @@ export function PropertiesPanel({
             ))}
           </div>
 
-          {/* Add tag input */}
+          {}
           <div
             className="flex items-center gap-1 rounded-md px-2 py-1 transition-colors"
             style={{
@@ -352,7 +323,7 @@ export function PropertiesPanel({
           </div>
         </Row>
 
-        {/* Linked notes */}
+        {}
         <Row icon={<Link2 className="w-3.5 h-3.5" />} label="Linked notes">
           <span
             className="inline-flex items-center gap-1 text-[12px] font-semibold tabular-nums px-2 py-0.5 rounded-full"
@@ -369,7 +340,7 @@ export function PropertiesPanel({
           </span>
         </Row>
 
-        {/* Note ID */}
+        {}
         <div className="flex items-start gap-2.5 pt-2">
           <span
             className="mt-0.5 shrink-0 w-3.5 h-3.5 flex items-center justify-center"
