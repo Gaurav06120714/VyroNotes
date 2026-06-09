@@ -33,7 +33,6 @@ export function Heatmap() {
   const cells = useMemo(() => buildLast84Days(days), [days]);
   const [hovered, setHovered] = useState<Day | null>(null);
 
-  // Group into 12 columns of 7 days (weeks)
   const weeks: Day[][] = [];
   for (let i = 0; i < 12; i++) {
     weeks.push(cells.slice(i * 7, i * 7 + 7));
