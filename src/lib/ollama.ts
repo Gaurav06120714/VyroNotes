@@ -1,19 +1,3 @@
-/**
- * ollama.ts
- *
- * Core Ollama client for VyroNotes.
- * Base URL: http://localhost:11434
- * Primary model: qwen2.5-coder:7b
- * Fallback model: qwen2.5-coder:7b (same, used for graceful degradation)
- *
- * Features:
- *  - Streaming chat via /api/chat
- *  - One-shot generation via /api/generate
- *  - AbortController support
- *  - 30s timeout
- *  - Error normalization
- */
-
 export const OLLAMA_BASE_URL = "http://localhost:11434";
 export const PRIMARY_MODEL   = "qwen2.5-coder:7b";
 export const FALLBACK_MODEL  = "qwen2.5-coder:7b";
@@ -33,9 +17,6 @@ export interface OllamaGenerateChunk {
   done: boolean;
 }
 
-/**
- * Check Ollama availability and return available model names.
- */
 export async function listModels(): Promise<string[]> {
   try {
     const res = await fetch(`${OLLAMA_BASE_URL}/api/tags`, { signal: AbortSignal.timeout(5000) });
@@ -47,9 +28,6 @@ export async function listModels(): Promise<string[]> {
   }
 }
 
-/**
- * Pick the best available model, falling back if primary is absent.
- */
 export async function resolveModel(requested?: string): Promise<string> {
   const available = await listModels();
   if (requested && available.some((m) => m.startsWith(requested.split(":")[0]))) {
@@ -61,10 +39,14 @@ export async function resolveModel(requested?: string): Promise<string> {
   return available[0] ?? PRIMARY_MODEL;
 }
 
-/**
- * Stream a chat completion from Ollama.
- * Returns an async generator that yields text chunks.
- */
+export function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function* streamChat(
   messages: OllamaMessage[],
   options?: { model?: string; signal?: AbortSignal }
@@ -72,25 +54,33 @@ export async function* streamChat(
   const model  = options?.model ?? PRIMARY_MODEL;
   const signal = options?.signal;
 
-  const timeoutId = setTimeout(() => {
-    // We can't abort from here without a controller reference,
-    // but the signal from caller handles abort anyway.
-  }, 30000);
+  let res: Response | undefined;
+  let lastErr: unknown;
 
-  let res: Response;
-  try {
-    res = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model, messages, stream: true }),
-      signal,
-    });
-  } catch (err) {
-    clearTimeout(timeoutId);
-    throw new OllamaError("Failed to connect to Ollama. Is it running?", err);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) {
+      await sleep(1000);
+      if (signal?.aborted) return;
+    }
+    try {
+      res = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model, messages, stream: true }),
+        signal,
+      });
+      lastErr = null;
+      break;
+    } catch (err) {
+      lastErr = err;
+      if (err instanceof Error && err.name === "AbortError") throw err;
+      
+    }
   }
 
-  clearTimeout(timeoutId);
+  if (lastErr || !res) {
+    throw new OllamaError("Failed to connect to Ollama. Is it running?", lastErr);
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -116,7 +106,7 @@ export async function* streamChat(
           }
           if (chunk.done) return;
         } catch {
-          // Non-JSON line, skip
+          
         }
       }
     }
@@ -125,10 +115,6 @@ export async function* streamChat(
   }
 }
 
-/**
- * One-shot generation (non-streaming).
- * Returns { text, model }.
- */
 export async function generate(
   prompt: string,
   options?: { model?: string; system?: string; signal?: AbortSignal }
@@ -136,21 +122,36 @@ export async function generate(
   const model  = options?.model ?? PRIMARY_MODEL;
   const signal = options?.signal;
 
-  let res: Response;
-  try {
-    res = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model,
-        prompt,
-        system: options?.system,
-        stream: false,
-      }),
-      signal,
-    });
-  } catch (err) {
-    throw new OllamaError("Failed to connect to Ollama.", err);
+  let res: Response | undefined;
+  let lastErr: unknown;
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) {
+      await sleep(1000);
+      if (signal?.aborted) throw new OllamaError("Aborted");
+    }
+    try {
+      res = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          prompt,
+          system: options?.system,
+          stream: false,
+        }),
+        signal,
+      });
+      lastErr = null;
+      break;
+    } catch (err) {
+      lastErr = err;
+      if (err instanceof Error && err.name === "AbortError") throw err;
+    }
+  }
+
+  if (lastErr || !res) {
+    throw new OllamaError("Failed to connect to Ollama.", lastErr);
   }
 
   if (!res.ok) {
@@ -162,9 +163,6 @@ export async function generate(
   return { text: data.response ?? "", model };
 }
 
-/**
- * Structured error class for Ollama failures.
- */
 export class OllamaError extends Error {
   cause?: unknown;
   constructor(message: string, cause?: unknown) {
