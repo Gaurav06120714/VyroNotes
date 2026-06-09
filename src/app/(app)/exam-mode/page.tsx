@@ -110,7 +110,6 @@ export default function ExamModePage() {
     return () => clearTimeout(t);
   }, [running, seconds]);
 
-  // Auto-suggest breathing every 15 min
   useEffect(() => {
     if (!running) return;
     if (seconds > 0 && seconds % (15 * 60) === 0) {
@@ -126,7 +125,6 @@ export default function ExamModePage() {
   const concepts = HIGH_PRIORITY[subject] || [];
   const remainingPct = (seconds / 3600) * 100;
 
-  // Reorder concepts by confidence: lowest confidence first
   const orderedConcepts = useMemo(() => {
     return [...concepts].sort((a, b) => {
       const ca = confidence[a.concept] ?? (a.weight === "high" ? 50 : 75);
@@ -143,7 +141,7 @@ export default function ExamModePage() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      {/* Calm header */}
+      {}
       <div className="text-center mb-8">
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
@@ -160,7 +158,7 @@ export default function ExamModePage() {
         </p>
       </div>
 
-      {/* Breathing reminder toast */}
+      {}
       <AnimatePresence>
         {showBreathe && (
           <motion.div
@@ -176,9 +174,9 @@ export default function ExamModePage() {
         )}
       </AnimatePresence>
 
-      {/* Timer + Timeline */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-6 mb-8">
-        {/* Timer */}
+        {}
         <div className="card-v2 flex flex-col items-center" style={{ padding: 24 }}>
           <div className="relative w-40 h-40 mb-4">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
@@ -232,7 +230,7 @@ export default function ExamModePage() {
           </div>
         </div>
 
-        {/* Emergency Revision Timeline */}
+        {}
         <div className="card-v2" style={{ padding: 24 }}>
           <div className="flex items-center gap-2 mb-3">
             <AlertCircle className="w-4 h-4 text-accent" />
@@ -271,7 +269,7 @@ export default function ExamModePage() {
         </div>
       </div>
 
-      {/* Subject selector */}
+      {}
       <div className="flex flex-wrap gap-1.5 mb-4">
         {SUBJECTS.map((s) => (
           <button
@@ -290,7 +288,7 @@ export default function ExamModePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
         <div className="space-y-4">
-          {/* Confidence-prioritized concepts */}
+          {}
           <div className="card-v2" style={{ padding: 20 }}>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[15px] font-semibold flex items-center gap-2">
@@ -359,7 +357,7 @@ export default function ExamModePage() {
             </div>
           </div>
 
-          {/* Quick-fire flashcards */}
+          {}
           {deck && deck.cards.length > 0 && (
             <div className="card-v2" style={{ padding: 20 }}>
               <h2 className="text-[15px] font-semibold mb-3 flex items-center gap-2">
@@ -405,7 +403,7 @@ export default function ExamModePage() {
           )}
         </div>
 
-        {/* Sidebar */}
+        {}
         <div className="space-y-3">
           <div className="card-v2 border-accent/20" style={{ padding: 16, background: "rgba(124,109,250,0.04)" }}>
             <h3 className="font-semibold text-[13px] mb-2.5 flex items-center gap-1.5">
