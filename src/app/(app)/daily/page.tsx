@@ -1,19 +1,5 @@
 "use client";
 
-/**
- * Daily Notes page  —  /daily
- *
- * Features
- * ────────
- * • Opens (or auto-creates) today's daily note on mount.
- * • Prev / Next day navigation with keyboard support (← →).
- * • Calendar strip — shows the last 14 days; days that already have
- *   a daily note show an accent dot.  Clicking any day navigates to it.
- * • Full-featured inline editor: title read-only, content editable,
- *   autosave via useAutosave, live word-count / reading-time in footer.
- * • "Open in editor" button navigates to /notes/[id] for the full editor.
- */
-
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import Link                       from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -36,29 +22,22 @@ import { wordCount, readingTime, cn } from "@/lib/utils";
 import { stagger, staggerItem, fadeUp, fadeUpTransition } from "@/lib/animations";
 import type { Note } from "@/lib/types";
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-/** Returns a Date representing midnight local time for `date`. */
 function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-/** "May 29, 2026" */
 function fmtLong(d: Date): string {
   return d.toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
-/** "Thu" */
 function fmtWeekday(d: Date): string {
   return d.toLocaleString("en-US", { weekday: "short" });
 }
 
-/** "29" */
 function fmtDayNum(d: Date): string {
   return String(d.getDate());
 }
 
-/** "May" */
 function fmtMonthShort(d: Date): string {
   return d.toLocaleString("en-US", { month: "short" });
 }
@@ -71,16 +50,14 @@ function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
-// ── CalendarStrip ──────────────────────────────────────────────────────────────
-
 interface CalendarStripProps {
   activeDate:   Date;
   onSelectDate: (d: Date) => void;
-  noteSet:      Set<string>; // set of YYYY-MM-DD keys that have daily notes
+  noteSet:      Set<string>; 
 }
 
 function CalendarStrip({ activeDate, onSelectDate, noteSet }: CalendarStripProps) {
-  // Build last 14 days (oldest → newest)
+  
   const days = useMemo(() => {
     const today = startOfDay(new Date());
     return Array.from({ length: 14 }, (_, i) => {
@@ -92,7 +69,6 @@ function CalendarStrip({ activeDate, onSelectDate, noteSet }: CalendarStripProps
 
   const stripRef = useRef<HTMLDivElement>(null);
 
-  // Scroll active day into view on mount / change
   useEffect(() => {
     const el = stripRef.current?.querySelector("[data-active='true']");
     el?.scrollIntoView({ inline: "center", block: "nearest" });
@@ -137,7 +113,7 @@ function CalendarStrip({ activeDate, onSelectDate, noteSet }: CalendarStripProps
             <span className="text-[9px] opacity-60 leading-none">
               {fmtMonthShort(d)}
             </span>
-            {/* Dot for existing note */}
+            {}
             <span
               className="w-1 h-1 rounded-full mt-0.5 transition-opacity"
               style={{
@@ -152,13 +128,10 @@ function CalendarStrip({ activeDate, onSelectDate, noteSet }: CalendarStripProps
   );
 }
 
-// ── Section stats row ──────────────────────────────────────────────────────────
-
 function SectionStats({ content }: { content: string }) {
   const words   = useMemo(() => wordCount(content),   [content]);
   const minutes = useMemo(() => readingTime(content), [content]);
 
-  // Count completed vs total checkbox tasks
   const totalTasks     = (content.match(/- \[[ x]\]/g) || []).length;
   const completedTasks = (content.match(/- \[x\]/g) || []).length;
 
@@ -178,8 +151,6 @@ function SectionStats({ content }: { content: string }) {
   );
 }
 
-// ── Main page ──────────────────────────────────────────────────────────────────
-
 export default function DailyPage() {
   const notes      = useNotesStore((s) => s.notes);
   const updateNote = useNotesStore((s) => s.updateNote);
@@ -190,8 +161,6 @@ export default function DailyPage() {
 
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
-  // ── Load (or create) the daily note whenever activeDate changes ────────────
-  // Access store actions directly (stable references — no re-render on change).
   useEffect(() => {
     const { getDailyNote } = useNotesStore.getState();
     const n = getDailyNote(activeDate);
@@ -199,7 +168,6 @@ export default function DailyPage() {
     setContent(n.content);
   }, [activeDate]);
 
-  // ── Autosave ───────────────────────────────────────────────────────────────
   const status = useAutosave(
     { content },
     (v) => {
@@ -208,12 +176,11 @@ export default function DailyPage() {
     1200
   );
 
-  // ── Build set of days that have a daily note (for CalendarStrip dots) ─────
   const noteSet = useMemo<Set<string>>(() => {
     const set = new Set<string>();
     for (const n of notes) {
       if (n.trashed || !n.tags.includes("daily")) continue;
-      // Extract date from title "Daily Note — Month Day, Year"
+      
       const m = n.title.match(/Daily Note — (.+)/);
       if (!m) continue;
       const parsed = new Date(m[1]);
@@ -224,7 +191,6 @@ export default function DailyPage() {
     return set;
   }, [notes]);
 
-  // ── Day navigation ─────────────────────────────────────────────────────────
   const goToPrev = useCallback(() => {
     setActiveDate((d) => {
       const prev = new Date(d);
@@ -244,7 +210,6 @@ export default function DailyPage() {
   const isToday  = isSameDay(activeDate, new Date());
   const isFuture = activeDate > startOfDay(new Date());
 
-  // Keyboard ← → navigation (only when not focused in textarea)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((document.activeElement as HTMLElement | null)?.tagName === "TEXTAREA") return;
@@ -256,7 +221,6 @@ export default function DailyPage() {
     return () => window.removeEventListener("keydown", handler);
   }, [goToPrev, goToNext, isFuture]);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <motion.div
       className="max-w-3xl mx-auto flex flex-col gap-5"
@@ -264,7 +228,7 @@ export default function DailyPage() {
       initial="initial"
       animate="animate"
     >
-      {/* ── Page header ───────────────────────────────────────────────────── */}
+      {}
       <motion.div variants={fadeUp} transition={fadeUpTransition}>
         <div className="flex items-center gap-2 mb-0.5">
           <CalendarDays className="w-5 h-5 shrink-0" style={{ color: "var(--accent)" }} />
@@ -280,7 +244,7 @@ export default function DailyPage() {
         </p>
       </motion.div>
 
-      {/* ── Calendar strip + day controls ─────────────────────────────────── */}
+      {}
       <motion.div
         variants={staggerItem}
         className="rounded-xl p-3"
@@ -289,14 +253,14 @@ export default function DailyPage() {
           border:     "1px solid var(--border)",
         }}
       >
-        {/* Strip */}
+        {}
         <CalendarStrip
           activeDate={activeDate}
           onSelectDate={(d) => setActiveDate(startOfDay(d))}
           noteSet={noteSet}
         />
 
-        {/* Nav row */}
+        {}
         <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: "1px solid var(--border)" }}>
           <button
             onClick={goToPrev}
@@ -347,7 +311,7 @@ export default function DailyPage() {
         </div>
       </motion.div>
 
-      {/* ── Editor card ───────────────────────────────────────────────────── */}
+      {}
       <AnimatePresence mode="wait">
         {note && (
           <motion.div
@@ -362,7 +326,7 @@ export default function DailyPage() {
               border:     "1px solid var(--border)",
             }}
           >
-            {/* Card header */}
+            {}
             <div
               className="flex items-center justify-between px-4 py-3"
               style={{ borderBottom: "1px solid var(--border)" }}
@@ -378,7 +342,7 @@ export default function DailyPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                {/* Save status */}
+                {}
                 <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--text-tertiary)" }}>
                   {status === "saving" ? (
                     <><Loader2 className="w-3 h-3 animate-spin" /> Saving…</>
@@ -387,7 +351,7 @@ export default function DailyPage() {
                   )}
                 </span>
 
-                {/* Open in full editor */}
+                {}
                 <Link
                   href={`/notes/${note.id}`}
                   className="flex items-center gap-1 px-2.5 h-7 rounded-md text-[11px] transition-colors hover:bg-bg-elevated"
@@ -400,7 +364,7 @@ export default function DailyPage() {
               </div>
             </div>
 
-            {/* Textarea */}
+            {}
             <textarea
               ref={editorRef}
               value={content}
@@ -417,7 +381,7 @@ export default function DailyPage() {
               spellCheck
             />
 
-            {/* Footer */}
+            {}
             <div
               className="flex items-center justify-between px-4 py-2.5"
               style={{ borderTop: "1px solid var(--border)" }}
@@ -433,7 +397,7 @@ export default function DailyPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Quick-tip banner (only when note was just created / empty) ─────── */}
+      {}
       {note && note.content.trim() === content.trim() && content.includes("🎯 Focus") && (
         <motion.div
           variants={staggerItem}
