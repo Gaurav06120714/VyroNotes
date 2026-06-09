@@ -36,7 +36,7 @@ export default function TimerPage() {
     }
     const t = setTimeout(() => setSeconds((s) => s - 1), 1000);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [running, seconds]);
 
   const mm = Math.floor(seconds / 60).toString().padStart(2, "0");
