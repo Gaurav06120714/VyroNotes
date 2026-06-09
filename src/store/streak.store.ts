@@ -27,7 +27,7 @@ function calc(days: { date: string; minutes: number }[]) {
   }
   longest = Math.max(longest, run);
   if (current === 0) {
-    // count from end consecutively
+    
     let c = 0;
     for (let i = days.length - 1; i >= 0; i--) {
       if (days[i].minutes > 0) c++;
