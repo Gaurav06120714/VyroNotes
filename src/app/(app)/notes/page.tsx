@@ -67,7 +67,7 @@ export default function NotesListPage() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-5 max-w-7xl mx-auto">
-      {/* Sidebar */}
+      {}
       <aside className="space-y-3 lg:max-h-[calc(100vh-120px)] lg:overflow-y-auto no-scrollbar">
         <button onClick={handleNew} className="btn-primary w-full">
           <Plus className="w-4 h-4" /> New Note
