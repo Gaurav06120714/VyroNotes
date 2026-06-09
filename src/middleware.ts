@@ -1,169 +1,167 @@
-/**
- * Next.js Edge Middleware — rate limiting for VyroNotes.
- *
- * Runs in the Edge Runtime (no Node.js APIs, no Redis).
- * Uses the request IP stored in headers to enforce per-IP limits
- * via a simple in-memory sliding window backed by the Edge KV-like
- * `waitUntil` pattern.
- *
- * Limits applied:
- *   - /api/auth/*   → 5 requests / 15 min / IP  (brute-force protection)
- *   - /api/*        → 60 requests / min / IP     (general API protection)
- *   - Everything else passes through untouched.
- *
- * NOTE: Edge middleware runs per-request in serverless; there is no shared
- * in-process memory across instances. This implementation adds rate-limit
- * headers and blocks based on request metadata.
- * For strict enforcement across serverless replicas, swap the in-process map
- * for an Upstash Redis store using @upstash/ratelimit when available.
- */
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-import { NextRequest, NextResponse } from 'next/server';
+const PROXY_DEPTH = parseInt(process.env.PROXY_DEPTH ?? "1", 10);
 
-// ── Config ────────────────────────────────────────────────────────────────────
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/notes",
+  "/graph",
+  "/daily",
+  "/canvas",
+  "/flashcards",
+  "/quizzes",
+  "/assignments",
+  "/calendar",
+  "/exams",
+  "/pdf-chat",
+  "/ai-assistant",
+  "/settings",
+  "/timer",
+  "/revision",
+  "/exam-mode",
+];
 
-const PROXY_DEPTH = parseInt(process.env.PROXY_DEPTH ?? '1', 10);
+const AUTH_ONLY_ROUTES = ["/login", "/register", "/reset-password"];
 
-/** Routes that receive strict auth-level limiting (5 / 15 min / IP). */
-const AUTH_ROUTES = ['/api/auth/'];
-
-/** General API limit (60 / min / IP). */
-const API_LIMIT = 60;
-const API_WINDOW_MS = 60_000;
-
-const AUTH_LIMIT = 5;
-const AUTH_WINDOW_MS = 15 * 60_000;
-
-// ── In-process sliding window store ──────────────────────────────────────────
-// Each entry: { timestamps: number[] }
-// Works correctly for single-instance dev; for multi-replica prod use Upstash.
+const hasSupabase =
+  !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  process.env.NEXT_PUBLIC_SUPABASE_URL !== "your_supabase_url";
 
 interface WindowEntry {
   timestamps: number[];
   lockedUntil?: number;
 }
 
-const store = new Map<string, WindowEntry>();
-
-// Periodically prune stale keys to prevent unbounded growth.
-// Edge middleware runs per-request so we prune on every ~100th call.
+const rlStore = new Map<string, WindowEntry>();
 let _callCount = 0;
+
 function maybePrune() {
   if (++_callCount % 100 !== 0) return;
   const now = Date.now();
-  for (const [key, entry] of store.entries()) {
-    if (entry.timestamps.every((t) => now - t > AUTH_WINDOW_MS) && !entry.lockedUntil) {
-      store.delete(key);
+  for (const [key, entry] of rlStore.entries()) {
+    if (
+      entry.timestamps.every((t) => now - t > 15 * 60_000) &&
+      (!entry.lockedUntil || now >= entry.lockedUntil)
+    ) {
+      rlStore.delete(key);
     }
   }
 }
 
-// ── IP extraction ─────────────────────────────────────────────────────────────
-
 function extractIp(req: NextRequest): string {
-  const xff = req.headers.get('x-forwarded-for');
+  const xff = req.headers.get("x-forwarded-for");
   if (xff) {
-    const ips = xff.split(',').map((s) => s.trim()).filter(Boolean);
+    const ips = xff.split(",").map((s) => s.trim()).filter(Boolean);
     const idx = ips.length - PROXY_DEPTH - 1;
-    if (idx >= 0) return ips[idx];
-    if (ips.length > 0) return ips[0];
+    return idx >= 0 ? ips[idx] : (ips[0] ?? "0.0.0.0");
   }
-  return req.headers.get('x-real-ip') ?? '0.0.0.0';
+  return req.headers.get("x-real-ip") ?? "0.0.0.0";
 }
-
-// ── Bot / scanner detection ───────────────────────────────────────────────────
-
-const SCANNER_RE =
-  /sqlmap|nikto|dirbuster|masscan|nmap|hydra|medusa|nessus|metasploit|burpsuite|havij|zgrab|acunetix|nuclei|feroxbuster|gobuster|wfuzz/i;
-
-function isBot(req: NextRequest): boolean {
-  const ua = req.headers.get('user-agent') ?? '';
-  if (!ua) return true;
-  return SCANNER_RE.test(ua);
-}
-
-// ── Sliding window check ──────────────────────────────────────────────────────
 
 function checkLimit(
   key: string,
   limit: number,
-  windowMs: number,
+  windowMs: number
 ): { allowed: boolean; retryAfter: number } {
   const now = Date.now();
-  let entry = store.get(key);
+  let entry = rlStore.get(key);
   if (!entry) {
     entry = { timestamps: [] };
-    store.set(key, entry);
+    rlStore.set(key, entry);
   }
-
-  // Check lockout (progressive lockout not wired here — handled server-side)
   if (entry.lockedUntil && now < entry.lockedUntil) {
     return { allowed: false, retryAfter: Math.ceil((entry.lockedUntil - now) / 1000) };
   }
-
-  // Evict expired entries
   entry.timestamps = entry.timestamps.filter((t) => now - t < windowMs);
-
   if (entry.timestamps.length >= limit) {
     const oldest = entry.timestamps[0];
-    const retryAfter = Math.ceil((oldest + windowMs - now) / 1000);
-    return { allowed: false, retryAfter: Math.max(1, retryAfter) };
+    return { allowed: false, retryAfter: Math.max(1, Math.ceil((oldest + windowMs - now) / 1000)) };
   }
-
   entry.timestamps.push(now);
   return { allowed: true, retryAfter: 0 };
 }
 
-// ── Middleware ────────────────────────────────────────────────────────────────
+const SCANNER_RE =
+  /sqlmap|nikto|dirbuster|masscan|nmap|hydra|medusa|nessus|metasploit|burpsuite|havij|zgrab|acunetix|nuclei|feroxbuster|gobuster|wfuzz/i;
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   maybePrune();
 
   const { pathname } = req.nextUrl;
 
-  // Only apply to API routes
-  if (!pathname.startsWith('/api/')) {
+  if (pathname.startsWith("/api/")) {
+    const ua = req.headers.get("user-agent") ?? "";
+    if (!ua || SCANNER_RE.test(ua)) {
+      return new NextResponse(
+        JSON.stringify({ error: "Forbidden", statusCode: 403 }),
+        { status: 403, headers: { "content-type": "application/json" } }
+      );
+    }
+
+    const ip = extractIp(req);
+    const isAuthRoute = pathname.startsWith("/api/auth/");
+    const { allowed, retryAfter } = isAuthRoute
+      ? checkLimit(`auth:${ip}`, 5, 15 * 60_000)
+      : checkLimit(`api:${ip}`, 60, 60_000);
+
+    if (!allowed) {
+      return new NextResponse(
+        JSON.stringify({ error: "Too many requests", statusCode: 429, retryAfter }),
+        {
+          status: 429,
+          headers: { "content-type": "application/json", "retry-after": String(retryAfter) },
+        }
+      );
+    }
+  }
+
+  if (!hasSupabase) {
     return NextResponse.next();
   }
 
-  // Bot check on all API routes
-  if (isBot(req)) {
-    return new NextResponse(
-      JSON.stringify({ error: 'Forbidden', statusCode: 403 }),
-      {
-        status: 403,
-        headers: { 'content-type': 'application/json' },
-      },
-    );
-  }
+  let response = NextResponse.next({ request: req });
 
-  const ip = extractIp(req);
-  const isAuthRoute = AUTH_ROUTES.some((r) => pathname.startsWith(r));
-
-  const { allowed, retryAfter } = isAuthRoute
-    ? checkLimit(`auth:${ip}`, AUTH_LIMIT, AUTH_WINDOW_MS)
-    : checkLimit(`api:${ip}`, API_LIMIT, API_WINDOW_MS);
-
-  if (!allowed) {
-    return new NextResponse(
-      JSON.stringify({
-        error: 'Too many requests. Please wait before trying again.',
-        statusCode: 429,
-        retryAfter,
-      }),
-      {
-        status: 429,
-        headers: {
-          'content-type': 'application/json',
-          'retry-after': String(retryAfter),
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            req.cookies.set(name, value)
+          );
+          response = NextResponse.next({ request: req });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
         },
       },
-    );
+    }
+  );
+
+  const { data: { session } } = await supabase.auth.getSession();
+  const isAuthenticated = !!session;
+
+  if (isAuthenticated && AUTH_ONLY_ROUTES.some((r) => pathname.startsWith(r))) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  return NextResponse.next();
+  if (!isAuthenticated && PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
+    const loginUrl = new URL("/login", req.url);
+    loginUrl.searchParams.set("redirectTo", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return response;
 }
 
 export const config = {
-  matcher: ['/api/:path*'],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };
