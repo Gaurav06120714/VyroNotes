@@ -1,5 +1,3 @@
-// Deterministic mock AI responses with optional context awareness.
-
 interface ResponseRule {
   match: RegExp;
   reply: string | ((ctx: string) => string);
@@ -100,7 +98,6 @@ export const QUICK_PROMPTS = [
   "What should I review today?",
 ];
 
-// Contextual prompts based on current pathname
 export function getContextualPrompts(pathname: string): string[] {
   if (pathname.startsWith("/notes/")) {
     return ["Summarize this note", "Quiz me on this", "Make flashcards", "Explain in simpler terms"];
