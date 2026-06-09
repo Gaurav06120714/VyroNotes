@@ -17,7 +17,7 @@ export function QuickCapture() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // Cmd/Ctrl + Shift + N
+      
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "N" || e.key === "n")) {
         e.preventDefault();
         setQuickCaptureOpen(true);
