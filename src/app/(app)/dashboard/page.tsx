@@ -32,11 +32,10 @@ import { generateRecommendations } from "@/lib/recommendations";
 import { useMemo, useState } from "react";
 import { stagger, staggerItem } from "@/lib/animations";
 
-// Mock daily goals — three concrete items
 interface Goal {
   id: string;
   title: string;
-  time: number; // minutes
+  time: number; 
   href: string;
   done: boolean;
 }
@@ -91,14 +90,12 @@ export default function DashboardPage() {
     0
   );
 
-  // Today summary
   const todayMin = (streakDays[streakDays.length - 1]?.minutes ?? 0);
   const todayHr = Math.floor(todayMin / 60);
   const todayRemMin = todayMin % 60;
 
-  // Sparkline data from last 14 days
   const last14 = streakDays.slice(-14).map((d) => d.minutes);
-  // Generate variant arrays for the other stats
+  
   const tasksSpark = useMemo(() => Array.from({ length: 14 }, (_, i) => 4 + Math.round(Math.sin(i / 2) * 2 + Math.random())), []);
   const cardsSpark = useMemo(() => Array.from({ length: 14 }, (_, i) => 20 + Math.round(Math.cos(i / 1.5) * 8 + Math.random() * 6)), []);
   const streakSpark = useMemo(() => Array.from({ length: 14 }, (_, i) => Math.min(currentStreak, i + (currentStreak - 13))), [currentStreak]);
@@ -153,7 +150,7 @@ export default function DashboardPage() {
       animate="animate"
       className="space-y-5 max-w-7xl mx-auto"
     >
-      {/* Greeting */}
+      {}
       <motion.div variants={staggerItem} className="card-v2 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-[11px] text-text-tertiary mb-1.5">
@@ -161,7 +158,7 @@ export default function DashboardPage() {
             <span>{greeting} · {today}</span>
           </div>
           <h1 className="text-[28px] md:text-[32px] font-bold tracking-[-0.02em] leading-tight">
-            Welcome back, <span className="text-accent">{user?.name || "Student"}</span>.
+            Welcome back, <span className="text-accent">{(user?.user_metadata?.full_name as string | undefined) ?? user?.email?.split("@")[0] ?? "Student"}</span>.
           </h1>
           <p className="text-text-secondary text-[13px] mt-1">Here&apos;s what your study day looks like.</p>
         </div>
@@ -176,7 +173,7 @@ export default function DashboardPage() {
         </div>
       </motion.div>
 
-      {/* AI Daily Goals */}
+      {}
       <motion.div variants={staggerItem} className="card-v2">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -226,7 +223,7 @@ export default function DashboardPage() {
         </div>
       </motion.div>
 
-      {/* Stats row */}
+      {}
       <motion.div variants={staggerItem} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {stats.map((s) => (
           <div key={s.label} className="stat-card hover-lift">
@@ -241,12 +238,12 @@ export default function DashboardPage() {
         ))}
       </motion.div>
 
-      {/* Heatmap */}
+      {}
       <motion.div variants={staggerItem}>
         <Heatmap />
       </motion.div>
 
-      {/* Exam alert */}
+      {}
       {closestExamWithin14 && (
         <motion.div variants={staggerItem}>
           <div
@@ -283,10 +280,10 @@ export default function DashboardPage() {
         </motion.div>
       )}
 
-      {/* Two columns: due soon + recommendations */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <motion.div variants={staggerItem} className="lg:col-span-2 space-y-5">
-          {/* Due soon */}
+          {}
           <div className="card-v2">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[15px] font-semibold flex items-center gap-2">
@@ -328,7 +325,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Recommendations */}
+          {}
           {recommendations.length > 0 && (
             <div className="card-v2">
               <h2 className="text-[15px] font-semibold flex items-center gap-2 mb-3">
@@ -398,9 +395,9 @@ export default function DashboardPage() {
           )}
         </motion.div>
 
-        {/* Sidebar column */}
+        {}
         <motion.div variants={staggerItem} className="space-y-5">
-          {/* Recently edited */}
+          {}
           <div className="card-v2">
             <h2 className="text-[15px] font-semibold mb-3 flex items-center gap-2">
               <StickyNote className="w-4 h-4 text-accent" /> Recent notes
@@ -423,7 +420,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Upcoming exams */}
+          {}
           <div className="card-v2">
             <h2 className="text-[15px] font-semibold mb-3 flex items-center gap-2">
               <GraduationCap className="w-4 h-4 text-accent" /> Exams
