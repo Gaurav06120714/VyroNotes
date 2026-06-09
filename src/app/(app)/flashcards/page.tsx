@@ -76,7 +76,7 @@ export default function FlashcardsPage() {
               <h3 className="font-semibold text-[15px] mb-0.5">{d.name}</h3>
               <p className="text-[11px] text-text-tertiary mb-3">{d.cards.length} cards</p>
 
-              {/* Mastery ring inline */}
+              {}
               <div className="flex items-center justify-between text-[11px] mb-1.5">
                 <span className="text-text-secondary">Mastery</span>
                 <span className="font-semibold text-emerald-400">{p}%</span>
@@ -90,7 +90,7 @@ export default function FlashcardsPage() {
                 />
               </div>
 
-              {/* Stats chips */}
+              {}
               <div className="flex items-center gap-1.5 mb-3 text-[10px]">
                 {due > 0 && (
                   <span className="px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-accent">
@@ -142,7 +142,7 @@ export default function FlashcardsPage() {
         })}
       </div>
 
-      {/* Create deck modal */}
+      {}
       <AnimatePresence>
         {createOpen && (
           <motion.div
@@ -199,7 +199,7 @@ export default function FlashcardsPage() {
         )}
       </AnimatePresence>
 
-      {/* Study mode */}
+      {}
       <AnimatePresence>
         {studyDeck && (
           <StudySession
@@ -242,7 +242,6 @@ function StudySession({
   const card: Flashcard | undefined = cards[idx];
   const total = cards.length;
 
-  // Rapid fire timer
   useEffect(() => {
     if (mode !== "rapid" || done) return;
     if (rapidTimeLeft <= 0) {
@@ -305,7 +304,7 @@ function StudySession({
       className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-4"
     >
       <div className="w-full max-w-2xl">
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between mb-4 text-[13px] text-text-secondary">
           <div className="flex items-center gap-2">
             <span className="font-medium text-text-primary">{deck.name}</span>
@@ -332,7 +331,7 @@ function StudySession({
           </button>
         </div>
 
-        {/* Progress */}
+        {}
         <div className="h-1 bg-[var(--bg-elevated)] rounded-full mb-6 overflow-hidden">
           <motion.div
             className="h-full bg-accent"
@@ -344,7 +343,7 @@ function StudySession({
           />
         </div>
 
-        {/* Card */}
+        {}
         <div className="relative" style={{ perspective: 1200 }}>
           <motion.div
             key={card.id + (flipped ? "f" : "b")}
@@ -381,7 +380,7 @@ function StudySession({
           </motion.div>
         </div>
 
-        {/* Rating buttons */}
+        {}
         <AnimatePresence>
           {flipped && (
             <motion.div
@@ -417,7 +416,7 @@ function StudySession({
           </div>
         )}
 
-        {/* Stats bar */}
+        {}
         <div className="flex items-center justify-center gap-4 mt-5 text-[11px] text-text-tertiary">
           <span className="text-red-400">Again: {stats.again}</span>
           <span className="text-orange-400">Hard: {stats.hard}</span>
