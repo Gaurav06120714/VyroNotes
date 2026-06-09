@@ -34,7 +34,7 @@ export interface Flashcard {
   id: string;
   front: string;
   back: string;
-  mastery: number; // 0-100
+  mastery: number; 
   dueAt: string;
   easeFactor: number;
   interval: number;
